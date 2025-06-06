@@ -7,7 +7,6 @@ import sys
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-import bcrypt
 import mimetypes
 from config import get_config
 from logger import log_info, log_error, log_warning, log_debug
@@ -88,7 +87,7 @@ def login():
         password = request.form.get('password')
         
         if username == os.getenv('ADMIN_USERNAME') and \
-           bcrypt.checkpw(password.encode('utf-8'), os.getenv('ADMIN_PASSWORD').encode('utf-8')):
+           check_password_hash(os.getenv('ADMIN_PASSWORD'), password):
             user = User(username)
             login_user(user)
             log_info(f"Connexion réussie pour l'utilisateur: {username}")

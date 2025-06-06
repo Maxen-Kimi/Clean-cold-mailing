@@ -9,7 +9,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import bcrypt
 import mimetypes
-import magic
 from config import get_config
 from logger import log_info, log_error, log_warning, log_debug
 from backup import backup_manager

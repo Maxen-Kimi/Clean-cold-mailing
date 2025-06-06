@@ -10,6 +10,5 @@ gunicorn==21.2.0
 bcrypt==4.0.1
 flask-talisman==1.1.0
 python-magic==0.4.27
-python-magic-bin==0.4.14
 APScheduler==3.10.4
 watchdog==3.0.0 

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <title>Clean Cold Mailing</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-card">
+            <div class="app-header">
+                <div class="logo">
+                    <i class="bi bi-envelope-check"></i>
+                    <h1>Clean Cold Mailing</h1>
+                </div>
+                <div class="header-actions">
+                    <p class="subtitle">Optimisez votre base de données d'emails professionnels</p>
+                    <a href="{{ url_for('logout') }}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                    </a>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <!-- Section Upload -->
+                <div class="section upload-section">
+                    <h2><i class="bi bi-cloud-upload"></i> Importez votre fichier</h2>
+                    <form id="uploadForm" class="upload-form">
+                        <div class="file-input-wrapper">
+                            <input type="file" id="fileInput" accept=".xlsx" required>
+                            <label for="fileInput" class="file-label">
+                                <i class="bi bi-file-earmark-excel"></i>
+                                <span id="file-name">Choisir un fichier Excel</span>
+                            </label>
+                        </div>
+                    </form>
+                    <div id="uploadStatus" class="status-message"></div>
+                    <div id="upload-icon-status" class="upload-icon-status"><i class="bi"></i></div>
+                    <div class="result-section">
+                        <h2><i class="bi bi-graph-up"></i> Résultats</h2>
+                        <div id="result-message"></div>
+                        <div id="terminal-output" class="terminal-output"></div>
+                    </div>
+                </div>
+
+                <!-- Section Actions -->
+                <div class="section actions-section">
+                    <h2><i class="bi bi-gear"></i> Actions disponibles</h2>
+                    <div class="actions-grid">
+                        <button class="action-btn" onclick="processFile('extract_companies')">
+                            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAACXBIWXMAAAsTAAALEwEAmpwYAAADI0lEQVR4nO2XPWgVQRCAT/wpVPyNP2inNhaCP4iViCDiH9h4RDCavJ3beckTFS38KUIsRQRLexEtLKJNFH8KLaJCCgULf7oQ0UjizdwzBAt9snf7Yrzc3Tu5d+9e4g1sczN7M9/Ozu6OYeQyjQSQK2mOHOS/zUguWQqkvI0att2gCSAgB5kkWWciz4hf4q5QmjaQZo3MGBDIa4TzYk8kM75GjJkCAnmxc17sTVsjAuk9IF0UaO8G5NM1tqsDyDbit8XNBSLpOmJlblXX01OZA0gmSOe8kDQc5lcgPy0UHZg8NxFIkiGQHxpGZVaYT8uibYD0y7On+1bRPiIkHf37P/QS8dP8jEFob02/kvr9th1obwWkVoH8UWf1aqYgAOVVtf3STW1f8OtEp71Fg4xEZTYWSBy7MJsTxbG1MUB69RZqDdF/dTMmxtZkBmIVncNRPk2zMrta8Ii0PjAuSUN1AUk4bkX57MDyJiHpJyD9aG+3l/j17aXvq9VhIJC+xIJIC6QgeX9tv9TnZs/iQ1N0kor6IHiRMQjtifLZ1vZ5AUh6F2Z7/CQvB6RxlbXYF2QaNaICUCdPmE8h+a5e8bdBF5+pagiZXNCCsyIzEO/o5LOhPiUPese0szEE9LYHygOxIKJAEg9JQ52d5ZXBt7oLOhgYD9Ay7x80HgbaWBAv2NdTVhv5jV7tc8Hx0D69EP2xIVIHidh+plmZFxSPkPxA18+FuoDEsUtiUyueY6dGFk0LEESnJSoe418lzW0lkJ77/alvukYGLMvePDUeGtf6g00BorrDQhet8/tT30DSB89O9STUV5DOrol4JF9x57tPGL4jJW3PBERILguka6XS8MIwn0qnbJTtn7nUB0Ab1GUIki6pd9iETtIzy3J2NgrEBqRudQ/EWsGJO4O6vble/1FA3qF0qhXQ2fF0rp5vhLbA9YGg3rDijSOITku1P1HP+64uWjo5ewpWII9p/b3AZqsOII/VdjASiuluKX6iV/6yX6/ebgJ5NLQZa8STPa5AkQ/oOnsVpBeSz2j9o3r5NKqpzmII5NG6gWQFATWeOLkYGctv2aUq3+moXy0AAAAASUVORK5CYII=" alt="client-company" style="width: 24px; height: 24px;">
+                            <span>Extraire les entreprises</span>
+                        </button>
+                        <button class="action-btn" onclick="processFile('analyze_patterns')">
+                            <i class="bi bi-search"></i>
+                            <span>Analyser les patterns</span>
+                        </button>
+                        <button class="action-btn" onclick="processFile('clean_complete')">
+                            <i class="bi bi-envelope-plus"></i>
+                            <span>Compléter les emails</span>
+                        </button>
+                        <button class="action-btn" onclick="processFile('normalize')">
+                            <i class="bi bi-text-paragraph"></i>
+                            <span>Normaliser les caractères</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section Résultats -->
+                <div class="section results-section">
+                    <h2><i class="bi bi-download"></i> Télécharger les résultats</h2>
+                    <div id="downloadButtons" class="download-grid">
+                        <button class="download-btn" onclick="downloadFile('companies.xlsx')">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            <span>Télécharger les noms d'entreprises</span>
+                        </button>
+                        <button class="download-btn" onclick="downloadFile('detected_patterns.xlsx')">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            <span>Télécharger la liste des patterns</span>
+                        </button>
+                        <button class="download-btn" onclick="downloadFile('cleaned_contacts.xlsx')">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            <span>Télécharger le fichier completer</span>
+                        </button>
+                        <button class="download-btn" onclick="downloadFile('normalized_contacts.xlsx')">
+                            <i class="bi bi-file-earmark-excel"></i>
+                            <span>Télécharger le fichier normalisé</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nouvelle section Guide d'utilisation -->
+            <div class="section user-guide-section">
+                <h2><i class="bi bi-question-circle"></i> Guide d'utilisation</h2>
+                <div class="guide-content">
+                    <h4>1. Importez votre fichier</h4>
+                    <p>Cliquez sur "Choisir un fichier Excel". Dès que vous sélectionnez un fichier (.xlsx), l'upload démarre automatiquement. Attendez le message de succès et l'icône verte avant de passer aux actions.</p>
+
+                    <h4>2. Actions disponibles</h4>
+                    <p>Une fois votre fichier importé, choisissez l'une des actions à appliquer :</p>
+                    <ul>
+                        <li><strong>Extraire les entreprises :</strong> Identifie les entreprises uniques à partir des emails "catch_all@pro" ou vides.</li>
+                        <li><strong>Analyser les patterns :</strong> Détecte les formats d'emails les plus probables pour les entreprises à partir des emails "nominative@pro" ou "Generated".</li>
+                        <li><strong>Compléter les emails :</strong> Utilise les patterns détectés pour générer des emails pour les contacts dont l'email était manquant ou "catch_all@pro".</li>
+                        <li><strong>Normaliser les caractères :</strong> Convertit les caractères spéciaux (accents, cédilles, etc.) en caractères ASCII standard dans les noms et prénoms.</li>
+                    </ul>
+
+                    <h4>3. Résultats</h4>
+                    <p>Après avoir lancé une action, les messages de progression et les résultats du script s'afficheront dans la rubrique "Résultats" en temps réel.</p>
+
+                    <h4>4. Télécharger les résultats</h4>
+                    <p>Cliquez sur les boutons correspondants pour télécharger les fichiers générés par les actions.</p>
+                </div>
+            </div>
+
+            <div id="status" class="status-message"></div>
+
+            
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+    document.getElementById('fileInput').addEventListener('change', function() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        const fileNameSpan = document.getElementById('file-name');
+        const uploadStatusDiv = document.getElementById('uploadStatus');
+        const uploadIconStatusDiv = document.getElementById('upload-icon-status');
+
+        if (!file) {
+            fileNameSpan.textContent = 'Choisir un fichier Excel';
+            uploadStatusDiv.textContent = '';
+            uploadIconStatusDiv.innerHTML = '<i class="bi"></i>';
+            return;
+        }
+
+        fileNameSpan.textContent = file.name;
+        uploadStatusDiv.textContent = 'Uploading...';
+        uploadIconStatusDiv.innerHTML = '<i class="bi bi-arrow-repeat upload-spinning"></i>';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        fetch('/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                uploadStatusDiv.textContent = 'Error uploading file: ' + data.error;
+                uploadIconStatusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+            } else {
+                uploadStatusDiv.textContent = 'Fichier téléchargé avec succès.';
+                uploadIconStatusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success"></i>';
+                document.getElementById('uploadForm').dataset.uploadedFilename = data.filename;
+            }
+        })
+        .catch(error => {
+            uploadStatusDiv.textContent = 'Error during upload: ' + error.message;
+            uploadIconStatusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger"></i>';
+        });
+    });
+
+    function processFile(action) {
+        const uploadedFilename = document.getElementById('uploadForm').dataset.uploadedFilename;
+
+        if (!uploadedFilename) {
+            alert('Veuillez d\'abord uploader un fichier');
+            return;
+        }
+
+        fetch('/process', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: action,
+                filename: uploadedFilename
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('result-message').textContent = data.message;
+            document.getElementById('terminal-output').textContent = data.output || '';
+        })
+        .catch(error => {
+            document.getElementById('result-message').textContent = 'Erreur: ' + error.message;
+        });
+    }
+    </script>
+
+    <style>
+    .upload-spinning {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .upload-icon-status i {
+        vertical-align: middle;
+        margin-left: 10px;
+        font-size: 1.2em;
+    }
+
+    .text-success {
+        color: #28a745;
+    }
+
+    .text-danger {
+        color: #dc3545;
+    }
+    </style>
+</body>
+</html> 

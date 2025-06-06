@@ -108,10 +108,40 @@
                     <h4>2. Actions disponibles</h4>
                     <p>Une fois votre fichier importé, choisissez l'une des actions à appliquer :</p>
                     <ul>
-                        <li><strong>Extraire les entreprises :</strong> Identifie les entreprises uniques à partir des emails "catch_all@pro" ou vides.</li>
-                        <li><strong>Analyser les patterns :</strong> Détecte les formats d'emails les plus probables pour les entreprises à partir des emails "nominative@pro" ou "Generated".</li>
-                        <li><strong>Compléter les emails :</strong> Utilise les patterns détectés pour générer des emails pour les contacts dont l'email était manquant ou "catch_all@pro".</li>
-                        <li><strong>Normaliser les caractères :</strong> Convertit les caractères spéciaux (accents, cédilles, etc.) en caractères ASCII standard dans les noms et prénoms.</li>
+                        <li><strong>Extraire les entreprises :</strong> Identifie les entreprises uniques à partir des emails "catch_all@pro" ou vides.
+                            <ul>
+                                <li>Colonnes nécessaires :</li>
+                                <li>Société : nom de l'entreprise</li>
+                                <li>Email Qualification : qualification des emails (doit contenir 'catch_all@pro' ou être vide)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Analyser les patterns :</strong> Détecte les formats d'emails les plus probables pour les entreprises à partir des emails "nominative@pro" ou "Generated".
+                            <ul>
+                                <li>Colonnes nécessaires :</li>
+                                <li>Email : email du contact</li>
+                                <li>Prénom : prénom du contact</li>
+                                <li>Nom : nom du contact</li>
+                                <li>Société : nom de l'entreprise</li>
+                                <li>Email Qualification : doit contenir 'nominative@pro' ou 'Generated' pour être pris en compte</li>
+                            </ul>
+                        </li>
+                        <li><strong>Compléter les emails :</strong> Utilise les patterns détectés pour générer des emails pour les contacts dont l'email était manquant ou "catch_all@pro".
+                            <ul>
+                                <li>Colonnes nécessaires :</li>
+                                <li>Email : email du contact (même si vide)</li>
+                                <li>Prénom : prénom du contact</li>
+                                <li>Nom : nom du contact</li>
+                                <li>Société : nom de l'entreprise</li>
+                                <li>Email Qualification : qualification des emails (même si vide)</li>
+                            </ul>
+                        </li>
+                        <li><strong>Normaliser les caractères :</strong> Convertit les caractères spéciaux (accents, cédilles, etc.) en caractères ASCII standard dans les noms et prénoms.
+                            <ul>
+                                <li>Colonnes nécessaires :</li>
+                                <li>Prénom : prénom du contact</li>
+                                <li>Nom : nom du contact</li>
+                            </ul>
+                        </li>
                     </ul>
 
                     <h4>3. Résultats</h4>

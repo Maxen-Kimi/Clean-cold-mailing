@@ -63,11 +63,17 @@ def allowed_file(filename):
 
 def validate_excel_file(filepath):
     try:
-        mime = magic.Magic(mime=True)
-        file_mime = mime.from_file(filepath)
-        if file_mime not in ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel']:
+        # Vérifier l'extension
+        if not filepath.endswith('.xlsx'):
             return False
-        pd.read_excel(filepath)
+            
+        # Essayer d'ouvrir le fichier avec pandas
+        df = pd.read_excel(filepath)
+        
+        # Vérifier que le fichier contient des données
+        if df.empty:
+            return False
+            
         return True
     except Exception as e:
         log_error(e, f"Erreur de validation du fichier Excel: {filepath}")

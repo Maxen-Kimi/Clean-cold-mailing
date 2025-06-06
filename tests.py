@@ -33,6 +33,12 @@ class TestApp(unittest.TestCase):
         """Test de la validation des fichiers Excel."""
         self.assertTrue(validate_excel_file(self.test_file))
         
+        # Créer un fichier Excel vide
+        empty_df = pd.DataFrame()
+        empty_df.to_excel('empty.xlsx', index=False)
+        self.assertFalse(validate_excel_file('empty.xlsx'))
+        os.remove('empty.xlsx')
+        
         # Créer un fichier texte et tester
         with open('test.txt', 'w') as f:
             f.write('test')

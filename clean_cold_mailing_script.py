@@ -132,14 +132,20 @@ def step3_clean_and_complete(filename='input.xlsx'):
             mask_conn = input_df['Connections'] <= 50
             input_df = input_df[~mask_conn].copy()
 
+        # Supprimer les lignes où 'No match reasons' == 'company_unknown'
+        mask_company_unknown = None
+        if 'No match reasons' in input_df.columns:
+            mask_company_unknown = input_df['No match reasons'] == 'company_unknown'
+            input_df = input_df[~mask_company_unknown].copy()
+
         # Calculer le nombre de contacts supprimés
         contacts_supprimes = 0
-        if mask_zero is not None and mask_conn is not None:
-            contacts_supprimes = (mask_zero | mask_conn).sum()
-        elif mask_zero is not None:
-            contacts_supprimes = mask_zero.sum()
-        elif mask_conn is not None:
-            contacts_supprimes = mask_conn.sum()
+        masks = [m for m in [mask_zero, mask_conn, mask_company_unknown] if m is not None]
+        if masks:
+            from functools import reduce
+            import numpy as np
+            mask_total = reduce(lambda a, b: a | b, masks)
+            contacts_supprimes = np.sum(mask_total)
 
         # Créer une nouvelle colonne 'New Email' avec les valeurs de 'Email' existantes
         input_df['New Email'] = input_df['Email'].copy()

@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import sys
 from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 import mimetypes
 from config import get_config
@@ -36,7 +36,7 @@ Talisman(app,
         'img-src': "'self' data: https:",
         'font-src': "'self' https:",
     },
-    force_https=True,
+    force_https=app.config.get('ENV') == 'production',
     strict_transport_security=True,
     session_cookie_secure=True,
     session_cookie_http_only=True

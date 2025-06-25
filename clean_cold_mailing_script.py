@@ -142,7 +142,32 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Sauvegarder le résultat final en spécifiant explicitement toutes les colonnes
         columns_to_save = [col for col in input_df.columns]
         input_df[columns_to_save].to_excel('cleaned_contacts.xlsx', index=False)
-        
+
+        # === AJOUT : Coloration rouge des lignes où les 4 colonnes valent 0 ===
+        red_fill = openpyxl.styles.PatternFill(start_color='FFFF0000', end_color='FFFF0000', fill_type='solid')
+        cols_to_check = [
+            'Years in Position',
+            'Months in Position',
+            'Years in Company',
+            'Months in Company'
+        ]
+        # Vérifier que toutes les colonnes existent
+        if all(col in input_df.columns for col in cols_to_check):
+            # Charger le fichier Excel sauvegardé
+            wb = openpyxl.load_workbook('cleaned_contacts.xlsx')
+            ws = wb.active
+            # Trouver les index des colonnes à vérifier
+            header = [cell.value for cell in ws[1]]
+            idxs = [header.index(col) for col in cols_to_check]
+            # Parcourir les lignes de données
+            for row in range(2, ws.max_row + 1):
+                values = [ws.cell(row=row, column=col_idx+1).value for col_idx in idxs]
+                if all(v == 0 for v in values):
+                    for col in range(1, ws.max_column + 1):
+                        ws.cell(row=row, column=col).fill = red_fill
+            wb.save('cleaned_contacts.xlsx')
+        # === FIN AJOUT ===
+
         # Calculer et afficher les statistiques détaillées
         total_generated = (input_df['Email Qualification'] == 'Generated').sum()
         total_not_find = (input_df['Email Qualification'] == 'Not find').sum()

@@ -16,3 +16,42 @@
 2025-06-06 11:42:58,229 - clean_cold_mailing - INFO - Application initialisée
 2025-06-06 11:42:59,689 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
 2025-06-06 11:42:59,690 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 01:51:56,172 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 01:51:56,174 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 01:51:58,263 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 01:51:58,263 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 01:52:15,435 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 01:52:15,437 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:44:44,837 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:44:44,839 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:44:48,266 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:44:48,266 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:44:51,454 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:44:51,454 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:44:55,763 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:44:55,764 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:44:59,047 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:44:59,048 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:45:02,292 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:45:02,293 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:45:05,508 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:45:05,509 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:45:08,750 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:45:08,752 - clean_cold_mailing - INFO - Application initialisée
+2025-06-07 02:45:11,732 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-07 02:45:11,732 - clean_cold_mailing - INFO - Application initialisée
+2025-06-25 10:23:36,092 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-25 10:23:36,094 - clean_cold_mailing - INFO - Application initialisée
+2025-06-25 10:23:37,839 - clean_cold_mailing - INFO - Planificateur de sauvegardes démarré
+2025-06-25 10:23:37,840 - clean_cold_mailing - INFO - Application initialisée
+2025-06-25 10:28:22,316 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:23,909 - clean_cold_mailing - ERROR - Erreur: Page non trouvée: http://127.0.0.1:5000/favicon.ico
+2025-06-25 10:28:25,112 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:25,924 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:26,265 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:26,567 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:26,918 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:28:28,135 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:30:14,154 - clean_cold_mailing - WARNING - Tentative de connexion échouée pour l'utilisateur: maxen
+2025-06-25 10:30:14,157 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.
+2025-06-25 10:30:51,555 - clean_cold_mailing - ERROR - Erreur: Erreur serveur: 500 Internal Server Error: The server encountered an internal error and was unable to complete your request. Either the server is overloaded or there is an error in the application.

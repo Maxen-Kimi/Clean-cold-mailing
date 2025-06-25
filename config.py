@@ -41,11 +41,12 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     LOG_LEVEL = 'DEBUG'
+    ENV = "development"
 
 class ProductionConfig(Config):
     DEBUG = False
     LOG_LEVEL = 'INFO'
-
+    ENV = "production"
 # Configuration par défaut
 config = {
     'development': DevelopmentConfig,

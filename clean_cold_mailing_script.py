@@ -132,10 +132,10 @@ def step3_clean_and_complete(filename='input.xlsx'):
             mask_conn = input_df['Connections'] <= 50
             input_df = input_df[~mask_conn].copy()
 
-        # Supprimer les lignes où 'No match reasons' == 'company_unknown'
+        # Supprimer les lignes où 'No Match Reasons' == 'company_unknown'
         mask_company_unknown = None
-        if 'No match reasons' in input_df.columns:
-            mask_company_unknown = input_df['No match reasons'] == 'company_unknown'
+        if 'No Match Reasons' in input_df.columns:
+            mask_company_unknown = input_df['No Match Reasons'] == 'company_unknown'
             input_df = input_df[~mask_company_unknown].copy()
 
         # Calculer le nombre de contacts supprimés

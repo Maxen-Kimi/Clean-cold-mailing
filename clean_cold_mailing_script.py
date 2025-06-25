@@ -112,6 +112,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Ajouter une colonne pour les patterns
         input_df['Email Pattern'] = input_df['Société'].map(patterns_dict)
         
+        # Normaliser les colonnes Prénom et Nom (caractères spéciaux)
+        if 'Prénom' in input_df.columns:
+            input_df['Prénom'] = input_df['Prénom'].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
+        if 'Nom' in input_df.columns:
+            input_df['Nom'] = input_df['Nom'].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
+
         # Nettoyer les noms
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)

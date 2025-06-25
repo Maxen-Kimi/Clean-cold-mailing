@@ -118,6 +118,32 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Nom' in input_df.columns:
             input_df['Nom'] = input_df['Nom'].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
 
+        # Supprimer les titres, diplômes et suffixes académiques/honorifiques dans Prénom et Nom
+        TITRES_A_SUPPRIMER = [
+            # Titres
+            'dr', 'doctor', 'prof', 'professor',
+            # Diplômes/suffixes
+            'phd', 'ph.d', 'dphil', 'md', 'm.d', 'do', 'dvm', 'vmd', 'dds', 'dmd',
+            'mba', 'emba', 'ms', 'msc', 'ma', 'm.a', 'bs', 'bsc', 'ba',
+            # Autres (pharma)
+            'rn', 'np', 'pa', 'facp', 'faha', 'frcp', 'facs', 'fesc'
+        ]
+        def remove_titles(text):
+            if pd.isna(text):
+                return text
+            text = str(text)
+            # On retire chaque mot de la liste, insensible à la casse, avec ou sans point
+            for mot in TITRES_A_SUPPRIMER:
+                # Mot seul ou entouré d'espaces, début ou fin de chaîne
+                text = re.sub(rf'(?i)(?<![\w-]){mot}\.?\b', '', text)
+            # Nettoyer les espaces multiples
+            text = re.sub(r'\s+', ' ', text).strip()
+            return text
+        if 'Prénom' in input_df.columns:
+            input_df['Prénom'] = input_df['Prénom'].apply(remove_titles)
+        if 'Nom' in input_df.columns:
+            input_df['Nom'] = input_df['Nom'].apply(remove_titles)
+
         # Nettoyer les noms
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)

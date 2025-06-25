@@ -181,6 +181,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
             print("⚠️ La colonne New Email a disparu!")
             return False
             
+        # Transformer les colonnes 'Prénom' et 'Nom' en Nom propre (après la complétion)
+        if 'Prénom' in input_df.columns:
+            input_df['Prénom'] = input_df['Prénom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
+        if 'Nom' in input_df.columns:
+            input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
+
         # Sauvegarder le résultat final en spécifiant explicitement toutes les colonnes
         columns_to_save = [col for col in input_df.columns]
         input_df[columns_to_save].to_excel('cleaned_contacts.xlsx', index=False)

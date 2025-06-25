@@ -111,6 +111,9 @@ def step3_clean_and_complete(filename='input.xlsx'):
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)
         
+        # Sauvegarder le nombre de contacts avant suppression
+        total_contacts_initial = len(input_df)
+
         # Supprimer les lignes où les 4 colonnes valent 0
         cols_to_check = [
             'Years in Position',
@@ -118,13 +121,25 @@ def step3_clean_and_complete(filename='input.xlsx'):
             'Years in Company',
             'Months in Company'
         ]
+        mask_zero = None
         if all(col in input_df.columns for col in cols_to_check):
             mask_zero = (input_df[cols_to_check] == 0).all(axis=1)
             input_df = input_df[~mask_zero].copy()
 
         # Supprimer les lignes où 'Connections' <= 50
+        mask_conn = None
         if 'Connections' in input_df.columns:
-            input_df = input_df[input_df['Connections'] > 50].copy()
+            mask_conn = input_df['Connections'] <= 50
+            input_df = input_df[~mask_conn].copy()
+
+        # Calculer le nombre de contacts supprimés
+        contacts_supprimes = 0
+        if mask_zero is not None and mask_conn is not None:
+            contacts_supprimes = (mask_zero | mask_conn).sum()
+        elif mask_zero is not None:
+            contacts_supprimes = mask_zero.sum()
+        elif mask_conn is not None:
+            contacts_supprimes = mask_conn.sum()
 
         # Créer une nouvelle colonne 'New Email' avec les valeurs de 'Email' existantes
         input_df['New Email'] = input_df['Email'].copy()
@@ -167,7 +182,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
         print(f"✅ Generated : {total_generated}")
         print(f"❌ Not find : {total_not_find}")
         print(f"ℹ️ SAC : {total_sac}")
-        print(f"📝 Total traité : {total_generated + total_not_find + total_sac}")
+        print(f"🗑️ Contacts supprimés : {contacts_supprimes}")
+        print(f"📝 Total traité : {total_generated + total_not_find + total_sac + contacts_supprimes}")
         
         return True
         

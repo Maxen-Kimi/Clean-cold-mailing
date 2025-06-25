@@ -157,7 +157,7 @@ def step3_clean_and_complete(filename='input.xlsx'):
         input_df['New Email'] = input_df['Email'].copy()
         
         # Générer les nouveaux emails là où nécessaire dans la nouvelle colonne
-        mask = (input_df['Email'].isna()) | (input_df['Email Qualification'].astype(str).str.contains('catch_all@pro', na=False))
+        mask = (input_df['Email'].isna() | (input_df['Email'] == '')) | (input_df['Email Qualification'].astype(str).str.contains('catch_all@pro', na=False))
         input_df.loc[mask, 'New Email'] = input_df[mask].apply(
             lambda row: generate_email(row, row['Email Pattern']), axis=1
         )

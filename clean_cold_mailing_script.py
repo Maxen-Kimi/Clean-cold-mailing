@@ -101,6 +101,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
         patterns_df = pd.read_excel('detected_patterns.xlsx')
         input_df = pd.read_excel(filename)
         
+        # S'assurer que les colonnes 'Email' et 'Email Qualification' existent
+        if 'Email' not in input_df.columns:
+            input_df['Email'] = ''
+        if 'Email Qualification' not in input_df.columns:
+            input_df['Email Qualification'] = ''
+        
         # Créer un dictionnaire des patterns
         patterns_dict = dict(zip(patterns_df['Société'], patterns_df['Pattern']))
         

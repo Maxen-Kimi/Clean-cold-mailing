@@ -122,6 +122,10 @@ def step3_clean_and_complete(filename='input.xlsx'):
             mask_zero = (input_df[cols_to_check] == 0).all(axis=1)
             input_df = input_df[~mask_zero].copy()
 
+        # Supprimer les lignes où 'Connections' <= 50
+        if 'Connections' in input_df.columns:
+            input_df = input_df[input_df['Connections'] > 50].copy()
+
         # Créer une nouvelle colonne 'New Email' avec les valeurs de 'Email' existantes
         input_df['New Email'] = input_df['Email'].copy()
         

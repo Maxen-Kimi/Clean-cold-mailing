@@ -16,10 +16,9 @@ def clean_name(name):
         return ""
     # Convertir en string si ce n'est pas déjà le cas
     name = str(name)
-    # Supprimer les caractères spéciaux
+    # Supprimer les caractères spéciaux (mais garder les tirets)
     name = re.sub(r'[^a-zA-ZÀ-ÿ\-\s]', '', name)
-    # Ne garder que la première partie si trait d'union
-    name = name.split('-')[0]
+    # Ne plus couper au tiret : on garde le nom complet
     # Nettoyer les espaces
     name = name.strip()
     # Vérifier la longueur minimale

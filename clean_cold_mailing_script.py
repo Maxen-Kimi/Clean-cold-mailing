@@ -233,11 +233,6 @@ def step3_clean_and_complete(filename='input.xlsx'):
         EXCEPTIONS_COMPOSES = set([
             'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
         ])
-        def all_parts_in_exceptions(cell):
-            if pd.isna(cell):
-                return False
-            parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
-            return len(parts) > 1 and all(p in EXCEPTIONS_COMPOSES for p in parts)
         def is_composed_and_not_exception(cell):
             if pd.isna(cell):
                 return False
@@ -250,11 +245,19 @@ def step3_clean_and_complete(filename='input.xlsx'):
             return True
         composed_mask = False
         composed_df = pd.DataFrame()
+        debug_rows = []
         if 'Prénom' in input_df.columns and 'Nom' in input_df.columns:
-            composed_mask = (
-                input_df['Prénom'].apply(is_composed_and_not_exception) |
-                input_df['Nom'].apply(is_composed_and_not_exception)
-            )
+            prenom_mask = input_df['Prénom'].apply(is_composed_and_not_exception)
+            nom_mask = input_df['Nom'].apply(is_composed_and_not_exception)
+            composed_mask = prenom_mask | nom_mask
+            # Debug : afficher les lignes déplacées et la raison
+            for idx, row in input_df[composed_mask].iterrows():
+                reason = []
+                if prenom_mask.loc[idx]:
+                    reason.append('prénom')
+                if nom_mask.loc[idx]:
+                    reason.append('nom')
+                print(f"Déplacé dans Composed_Names : Prénom='{row['Prénom']}', Nom='{row['Nom']}' (composé détecté sur : {', '.join(reason)})")
             # Extraire les lignes composées
             composed_df = input_df[composed_mask].copy()
             # Supprimer ces lignes du principal (ils ne seront pas traités pour la génération d'emails)

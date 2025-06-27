@@ -103,8 +103,8 @@ def complete_name_from_linkedin(row):
         val = str(val).strip()
         return val == '' or len(val) == 1 or (len(val) == 2 and val[1] == '.')
     # Si les deux champs sont déjà bien renseignés, ne rien faire
-    if not (is_initial_or_empty(prenom) or is_initial_or_empty(nom)):
-        return prenom, nom, True  # Rien à compléter, mais succès
+    if not is_initial_or_empty(prenom) and not is_initial_or_empty(nom):
+        return prenom, nom, False  # Aucun champ à compléter, on sort sans rien changer
     if pd.isna(url) or not isinstance(url, str) or '/in/' not in url:
         return prenom, nom, False  # Pas d'URL utilisable
     # Extraire le slug LinkedIn
@@ -119,6 +119,9 @@ def complete_name_from_linkedin(row):
     if is_initial_or_empty(nom) and len(slug_parts) >= 2:
         nom = slug_parts[1].capitalize()
         found = True
+    # Correction : si après complétion prénom == nom, c'est une erreur, on considère que la complétion a échoué
+    if prenom == nom:
+        found = False
     return prenom, nom, found
 
 def step3_clean_and_complete(filename='input.xlsx'):

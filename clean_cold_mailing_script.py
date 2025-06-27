@@ -236,6 +236,9 @@ def step3_clean_and_complete(filename='input.xlsx'):
         with pd.ExcelWriter('cleaned_contacts.xlsx', engine='openpyxl') as writer:
             input_df[columns_to_save].to_excel(writer, index=False, sheet_name='Contacts')
             if not composed_df.empty:
+                # Supprimer la colonne 'New Email' de la feuille Composed_Names
+                if 'New Email' in composed_df.columns:
+                    composed_df = composed_df.drop('New Email', axis=1)
                 composed_df.to_excel(writer, index=False, sheet_name='Composed_Names')
 
         # Calculer et afficher les statistiques détaillées

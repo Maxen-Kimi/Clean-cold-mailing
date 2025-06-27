@@ -238,10 +238,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 return False
             parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
             if len(parts) < 2:
+                print(f"[DEBUG] '{cell}' → parts={parts} → False (pas composé)")
                 return False
-            # Si tous les mots sont dans la liste d'exceptions, ce n'est pas un composé à déplacer
             if all(p in EXCEPTIONS_COMPOSES for p in parts):
+                print(f"[DEBUG] '{cell}' → parts={parts} → False (exception reconnue)")
                 return False
+            print(f"[DEBUG] '{cell}' → parts={parts} → True (composé à déplacer)")
             return True
         composed_mask = False
         composed_df = pd.DataFrame()

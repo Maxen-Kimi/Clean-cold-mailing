@@ -102,29 +102,23 @@ def complete_name_from_linkedin(row):
     def is_initial_or_empty(val):
         val = str(val).strip()
         return val == '' or len(val) == 1 or (len(val) == 2 and val[1] == '.')
+    # Si les deux champs sont déjà bien renseignés, ne rien faire
     if not (is_initial_or_empty(prenom) or is_initial_or_empty(nom)):
-        return prenom, nom, False  # Rien à compléter
+        return prenom, nom, True  # Rien à compléter, mais succès
     if pd.isna(url) or not isinstance(url, str) or '/in/' not in url:
         return prenom, nom, False  # Pas d'URL utilisable
     # Extraire le slug LinkedIn
     slug = url.split('/in/')[-1].split('/')[0]
     slug = slug.replace('.', '-')
     slug_parts = [part for part in slug.split('-') if part and not part.isdigit()]
+    # Compléter le prénom et/ou le nom si besoin
     found = False
-    # Compléter le prénom si vide ou initiale
-    if is_initial_or_empty(prenom):
-        for part in slug_parts:
-            if (prenom == '' or part.lower().startswith(str(prenom).lower()[0])) and len(part) > 2:
-                prenom = part.capitalize()
-                found = True
-                break
-    # Compléter le nom si vide ou initiale
-    if is_initial_or_empty(nom):
-        for part in slug_parts:
-            if (nom == '' or part.lower().startswith(str(nom).lower()[0])) and len(part) > 2:
-                nom = part.capitalize()
-                found = True
-                break
+    if is_initial_or_empty(prenom) and len(slug_parts) >= 1:
+        prenom = slug_parts[0].capitalize()
+        found = True
+    if is_initial_or_empty(nom) and len(slug_parts) >= 2:
+        nom = slug_parts[1].capitalize()
+        found = True
     return prenom, nom, found
 
 def step3_clean_and_complete(filename='input.xlsx'):
@@ -194,19 +188,18 @@ def step3_clean_and_complete(filename='input.xlsx'):
         
         # === Complétion prénom/nom via LinkedIn ===
         if 'URL Linkedin' in input_df.columns:
-            to_drop = []
+            if 'Email Qualification' not in input_df.columns:
+                input_df['Email Qualification'] = ''
             for idx, row in input_df.iterrows():
                 prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
-                if (len(str(prenom).strip()) == 1 or (len(str(prenom).strip()) == 2 and str(prenom).strip()[1] == '.')) \
-                   or (len(str(nom).strip()) == 1 or (len(str(nom).strip()) == 2 and str(nom).strip()[1] == '.')):
-                    new_prenom, new_nom, found = complete_name_from_linkedin(row)
-                    if found:
-                        input_df.at[idx, 'Prénom'] = new_prenom
-                        input_df.at[idx, 'Nom'] = new_nom
-                    else:
-                        to_drop.append(idx)
-            if to_drop:
-                input_df = input_df.drop(to_drop)
+                new_prenom, new_nom, found = complete_name_from_linkedin(row)
+                # Si la complétion a réussi (au moins un champ complété), on met à jour
+                if found and (new_prenom != prenom or new_nom != nom):
+                    input_df.at[idx, 'Prénom'] = new_prenom
+                    input_df.at[idx, 'Nom'] = new_nom
+                # Si la complétion a échoué (besoin mais pas trouvé), on marque seulement
+                elif not found and (str(prenom).strip() == '' or len(str(prenom).strip()) <= 2 or str(nom).strip() == '' or len(str(nom).strip()) <= 2):
+                    input_df.at[idx, 'Email Qualification'] = 'LinkedIn name not found'
 
         # Sauvegarder le nombre de contacts avant suppression
         total_contacts_initial = len(input_df)
@@ -287,29 +280,17 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 return False
             parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
             if len(parts) < 2:
-                print(f"[DEBUG] '{cell}' → parts={parts} → False (pas composé)")
                 return False
             if all(p in EXCEPTIONS_COMPOSES for p in parts):
-                print(f"[DEBUG] '{cell}' → parts={parts} → False (exception reconnue)")
                 return False
-            print(f"[DEBUG] '{cell}' → parts={parts} → True (composé à déplacer)")
             return True
         composed_mask = False
         composed_df = pd.DataFrame()
-        debug_rows = []
         if 'Prénom' in input_df.columns and 'Nom' in input_df.columns:
             prenom_mask = input_df['Prénom'].apply(is_composed_and_not_exception)
             nom_mask = input_df['Nom'].apply(is_composed_and_not_exception)
             # Correction : on déplace si prénom composé non exception OU nom composé non exception
             composed_mask = prenom_mask | nom_mask
-            # Debug : afficher les lignes déplacées et la raison
-            for idx, row in input_df[composed_mask].iterrows():
-                reason = []
-                if prenom_mask.loc[idx]:
-                    reason.append('prénom')
-                if nom_mask.loc[idx]:
-                    reason.append('nom')
-                print(f"Déplacé dans Composed_Names : Prénom='{row['Prénom']}', Nom='{row['Nom']}' (composé détecté sur : {', '.join(reason)})")
             # Extraire les lignes composées
             composed_df = input_df[composed_mask].copy()
             # Supprimer ces lignes du principal (ils ne seront pas traités pour la génération d'emails)

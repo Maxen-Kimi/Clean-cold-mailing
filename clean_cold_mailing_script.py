@@ -228,7 +228,7 @@ def step3_clean_and_complete(filename='input.xlsx'):
             )
             # Extraire les lignes composées
             composed_df = input_df[composed_mask].copy()
-            # Supprimer ces lignes du principal
+            # Supprimer ces lignes du principal (ils ne seront pas traités pour la génération d'emails)
             input_df = input_df[~composed_mask].copy()
 
         # Sauvegarder le résultat final dans deux feuilles du même fichier Excel
@@ -242,11 +242,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
         total_generated = (input_df['Email Qualification'] == 'Generated').sum()
         total_not_find = (input_df['Email Qualification'] == 'Not find').sum()
         total_sac = (input_df['Email Qualification'] == 'SAC').sum()
-        
+        total_composed = len(composed_df)
         print("\n📊 Statistiques des emails générés :")
         print(f"✅ Generated : {total_generated}")
         print(f"❌ Not find : {total_not_find}")
         print(f"ℹ️ SAC : {total_sac}")
+        print(f"📝 Noms composés : {total_composed}")
         print(f"🗑️ Contacts supprimés : {contacts_supprimes}")
         print(f"📝 Total traité : {total_generated + total_not_find + total_sac + contacts_supprimes}")
         

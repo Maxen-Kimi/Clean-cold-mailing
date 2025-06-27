@@ -31,9 +31,10 @@ def generate_email(row, pattern):
         return ""
     
     # Liste d'exceptions (doit être la même que dans step3_clean_and_complete)
-    EXCEPTIONS_COMPOSES = set([
+    EXCEPTIONS_COMPOSES_RAW = [
         'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
-    ])
+    ]
+    EXCEPTIONS_COMPOSES = set([unidecode.unidecode(x).lower() for x in EXCEPTIONS_COMPOSES_RAW])
 
     def join_if_exception(name):
         parts = [unidecode.unidecode(p).lower() for p in str(name).strip().split()]

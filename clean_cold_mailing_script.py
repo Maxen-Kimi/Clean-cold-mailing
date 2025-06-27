@@ -95,6 +95,38 @@ def capture_output(func, *args, **kwargs):
             success = False
     return output.getvalue(), success
 
+def complete_name_from_linkedin(row):
+    prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
+    url = row.get('URL Linkedin', '')
+    # Vérifier si l'un des deux est une initiale seule
+    def is_initial(val):
+        val = str(val).strip()
+        return len(val) == 1 or (len(val) == 2 and val[1] == '.')
+    if not (is_initial(prenom) or is_initial(nom)):
+        return prenom, nom, False  # Rien à compléter
+    if pd.isna(url) or not isinstance(url, str) or '/in/' not in url:
+        return prenom, nom, False  # Pas d'URL utilisable
+    # Extraire le slug LinkedIn
+    slug = url.split('/in/')[-1].split('/')[0]
+    slug = slug.replace('.', '-')
+    slug_parts = [part for part in slug.split('-') if part and not part.isdigit()]
+    # Compléter le prénom si c'est une initiale
+    found = False
+    if is_initial(prenom):
+        for part in slug_parts:
+            if part.lower().startswith(str(prenom).lower()[0]) and len(part) > 2:
+                prenom = part.capitalize()
+                found = True
+                break
+    # Compléter le nom si c'est une initiale
+    if is_initial(nom):
+        for part in slug_parts:
+            if part.lower().startswith(str(nom).lower()[0]) and len(part) > 2:
+                nom = part.capitalize()
+                found = True
+                break
+    return prenom, nom, found
+
 def step3_clean_and_complete(filename='input.xlsx'):
     print("🔹 Étape 3: Nettoyage et complétion des emails")
     
@@ -160,6 +192,22 @@ def step3_clean_and_complete(filename='input.xlsx'):
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)
         
+        # === Complétion prénom/nom via LinkedIn ===
+        if 'URL Linkedin' in input_df.columns:
+            to_drop = []
+            for idx, row in input_df.iterrows():
+                prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
+                if (len(str(prenom).strip()) == 1 or (len(str(prenom).strip()) == 2 and str(prenom).strip()[1] == '.')) \
+                   or (len(str(nom).strip()) == 1 or (len(str(nom).strip()) == 2 and str(nom).strip()[1] == '.')):
+                    new_prenom, new_nom, found = complete_name_from_linkedin(row)
+                    if found:
+                        input_df.at[idx, 'Prénom'] = new_prenom
+                        input_df.at[idx, 'Nom'] = new_nom
+                    else:
+                        to_drop.append(idx)
+            if to_drop:
+                input_df = input_df.drop(to_drop)
+
         # Sauvegarder le nombre de contacts avant suppression
         total_contacts_initial = len(input_df)
 

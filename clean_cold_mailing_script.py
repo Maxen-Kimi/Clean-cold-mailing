@@ -218,9 +218,25 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Nom' in input_df.columns:
             input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
 
-        # Sauvegarder le résultat final en spécifiant explicitement toutes les colonnes
+        # Détecter les noms ou prénoms composés (contenant un espace uniquement)
+        composed_mask = False
+        composed_df = pd.DataFrame()
+        if 'Prénom' in input_df.columns and 'Nom' in input_df.columns:
+            composed_mask = (
+                input_df['Prénom'].astype(str).str.contains(r' ') |
+                input_df['Nom'].astype(str).str.contains(r' ')
+            )
+            # Extraire les lignes composées
+            composed_df = input_df[composed_mask].copy()
+            # Supprimer ces lignes du principal
+            input_df = input_df[~composed_mask].copy()
+
+        # Sauvegarder le résultat final dans deux feuilles du même fichier Excel
         columns_to_save = [col for col in input_df.columns]
-        input_df[columns_to_save].to_excel('cleaned_contacts.xlsx', index=False)
+        with pd.ExcelWriter('cleaned_contacts.xlsx', engine='openpyxl') as writer:
+            input_df[columns_to_save].to_excel(writer, index=False, sheet_name='Contacts')
+            if not composed_df.empty:
+                composed_df.to_excel(writer, index=False, sheet_name='Composed_Names')
 
         # Calculer et afficher les statistiques détaillées
         total_generated = (input_df['Email Qualification'] == 'Generated').sum()

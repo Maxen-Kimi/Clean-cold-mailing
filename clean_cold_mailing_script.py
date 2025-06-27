@@ -30,8 +30,19 @@ def generate_email(row, pattern):
     if pd.isna(pattern):
         return ""
     
-    firstname = clean_name(row['Prénom'])
-    lastname = clean_name(row['Nom'])
+    # Liste d'exceptions (doit être la même que dans step3_clean_and_complete)
+    EXCEPTIONS_COMPOSES = set([
+        'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
+    ])
+
+    def join_if_exception(name):
+        parts = [unidecode.unidecode(p).lower() for p in str(name).strip().split()]
+        if len(parts) > 1 and all(p in EXCEPTIONS_COMPOSES for p in parts):
+            return ''.join(parts)
+        return clean_name(name)
+
+    firstname = join_if_exception(row['Prénom'])
+    lastname = join_if_exception(row['Nom'])
     company = row['Société'].lower()
     
     if not firstname or not lastname:
@@ -218,13 +229,26 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Nom' in input_df.columns:
             input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
 
-        # Détecter les noms ou prénoms composés (contenant un espace uniquement)
+        # Détecter les noms ou prénoms composés (contenant un espace uniquement), sauf exceptions
+        EXCEPTIONS_COMPOSES = set([
+            'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
+        ])
+        def is_composed_and_not_exception(cell):
+            if pd.isna(cell):
+                return False
+            parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
+            if len(parts) < 2:
+                return False
+            # Si tous les mots sont dans la liste d'exceptions, ce n'est pas un composé à déplacer
+            if all(p in EXCEPTIONS_COMPOSES for p in parts):
+                return False
+            return True
         composed_mask = False
         composed_df = pd.DataFrame()
         if 'Prénom' in input_df.columns and 'Nom' in input_df.columns:
             composed_mask = (
-                input_df['Prénom'].astype(str).str.contains(r' ') |
-                input_df['Nom'].astype(str).str.contains(r' ')
+                input_df['Prénom'].apply(is_composed_and_not_exception) |
+                input_df['Nom'].apply(is_composed_and_not_exception)
             )
             # Extraire les lignes composées
             composed_df = input_df[composed_mask].copy()

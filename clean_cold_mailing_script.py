@@ -252,8 +252,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Prénom' in input_df.columns and 'Nom' in input_df.columns:
             prenom_mask = input_df['Prénom'].apply(is_composed_and_not_exception)
             nom_mask = input_df['Nom'].apply(is_composed_and_not_exception)
-            # Nouvelle logique : on ne déplace que si les deux sont composés non exception
-            composed_mask = prenom_mask & nom_mask
+            # Correction : on déplace si prénom composé non exception OU nom composé non exception
+            composed_mask = prenom_mask | nom_mask
             # Debug : afficher les lignes déplacées et la raison
             for idx, row in input_df[composed_mask].iterrows():
                 reason = []

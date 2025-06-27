@@ -158,78 +158,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Nettoyer les noms
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)
-        
-        # Sauvegarder le nombre de contacts avant suppression
-        total_contacts_initial = len(input_df)
 
-        # Supprimer les lignes où les 4 colonnes valent 0
-        cols_to_check = [
-            'Years in Position',
-            'Months in Position',
-            'Years in Company',
-            'Months in Company'
-        ]
-        mask_zero = None
-        if all(col in input_df.columns for col in cols_to_check):
-            mask_zero = (input_df[cols_to_check] == 0).all(axis=1)
-            input_df = input_df[~mask_zero].copy()
-
-        # Supprimer les lignes où 'Connections' <= 50
-        mask_conn = None
-        if 'Connections' in input_df.columns:
-            mask_conn = input_df['Connections'] <= 50
-            input_df = input_df[~mask_conn].copy()
-
-        # Supprimer les lignes où 'No Match Reasons' == 'company_unknown'
-        mask_company_unknown = None
-        if 'No Match Reasons' in input_df.columns:
-            mask_company_unknown = input_df['No Match Reasons'] == 'company_unknown'
-            input_df = input_df[~mask_company_unknown].copy()
-
-        # Calculer le nombre de contacts supprimés
-        contacts_supprimes = 0
-        masks = [m for m in [mask_zero, mask_conn, mask_company_unknown] if m is not None]
-        if masks:
-            from functools import reduce
-            import numpy as np
-            mask_total = reduce(lambda a, b: a | b, masks)
-            contacts_supprimes = np.sum(mask_total)
-
-        # Créer une nouvelle colonne 'New Email' avec les valeurs de 'Email' existantes
-        input_df['New Email'] = input_df['Email'].copy()
-        
-        # Générer les nouveaux emails là où nécessaire dans la nouvelle colonne
-        mask = (input_df['Email'].isna() | (input_df['Email'] == '')) | (input_df['Email Qualification'].astype(str).str.contains('catch_all@pro', na=False))
-        input_df.loc[mask, 'New Email'] = input_df[mask].apply(
-            lambda row: generate_email(row, row['Email Pattern']), axis=1
-        )
-        
-        # Définir les différents cas
-        generated_mask = (mask) & (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
-        failed_mask = (mask) & ((input_df['New Email'].isna()) | (input_df['New Email'] == ''))
-        sac_mask = (mask) & (input_df['New Email'] == input_df['Email'])
-        
-        # Mettre à jour Email qualification selon les cas
-        input_df.loc[generated_mask, 'Email Qualification'] = 'Generated'
-        input_df.loc[failed_mask, 'Email Qualification'] = 'Not find'
-        input_df.loc[sac_mask, 'Email Qualification'] = 'SAC'
-        
-        # Supprimer uniquement la colonne temporaire de pattern
-        if 'Email Pattern' in input_df.columns:
-            input_df = input_df.drop('Email Pattern', axis=1)
-        
-        # Vérifier que la colonne New Email est toujours présente
-        if 'New Email' not in input_df.columns:
-            print("⚠️ La colonne New Email a disparu!")
-            return False
-            
-        # Transformer les colonnes 'Prénom' et 'Nom' en Nom propre (après la complétion)
-        if 'Prénom' in input_df.columns:
-            input_df['Prénom'] = input_df['Prénom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
-        if 'Nom' in input_df.columns:
-            input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
-
-        # Détecter les noms ou prénoms composés (contenant un espace uniquement), sauf exceptions
+        # Détecter les noms ou prénoms composés (contenant un espace uniquement), sauf exceptions (juste après nettoyage)
         EXCEPTIONS_COMPOSES = set([
             'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
         ])
@@ -275,8 +205,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
         print(f"❌ Not find : {total_not_find}")
         print(f"ℹ️ SAC : {total_sac}")
         print(f"📝 Noms composés : {total_composed}")
-        print(f"🗑️ Contacts supprimés : {contacts_supprimes}")
-        print(f"📝 Total traité : {total_generated + total_not_find + total_sac + contacts_supprimes}")
+        print(f"🗑️ Contacts supprimés : {len(input_df) - len(input_df[input_df['Email'].notna() & (input_df['Email'] != '') & (input_df['Email'] != 'catch_all@pro')])}")
+        print(f"📝 Total traité : {total_generated + total_not_find + total_sac + len(input_df) - len(input_df[input_df['Email'].notna() & (input_df['Email'] != '') & (input_df['Email'] != 'catch_all@pro')])}")
         
         return True
         

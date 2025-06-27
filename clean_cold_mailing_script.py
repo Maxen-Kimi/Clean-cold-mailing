@@ -98,11 +98,11 @@ def capture_output(func, *args, **kwargs):
 def complete_name_from_linkedin(row):
     prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
     url = row.get('URL Linkedin', '')
-    # Vérifier si l'un des deux est une initiale seule
-    def is_initial(val):
+    # Vérifier si l'un des deux est vide ou une initiale seule
+    def is_initial_or_empty(val):
         val = str(val).strip()
-        return len(val) == 1 or (len(val) == 2 and val[1] == '.')
-    if not (is_initial(prenom) or is_initial(nom)):
+        return val == '' or len(val) == 1 or (len(val) == 2 and val[1] == '.')
+    if not (is_initial_or_empty(prenom) or is_initial_or_empty(nom)):
         return prenom, nom, False  # Rien à compléter
     if pd.isna(url) or not isinstance(url, str) or '/in/' not in url:
         return prenom, nom, False  # Pas d'URL utilisable
@@ -110,18 +110,18 @@ def complete_name_from_linkedin(row):
     slug = url.split('/in/')[-1].split('/')[0]
     slug = slug.replace('.', '-')
     slug_parts = [part for part in slug.split('-') if part and not part.isdigit()]
-    # Compléter le prénom si c'est une initiale
     found = False
-    if is_initial(prenom):
+    # Compléter le prénom si vide ou initiale
+    if is_initial_or_empty(prenom):
         for part in slug_parts:
-            if part.lower().startswith(str(prenom).lower()[0]) and len(part) > 2:
+            if (prenom == '' or part.lower().startswith(str(prenom).lower()[0])) and len(part) > 2:
                 prenom = part.capitalize()
                 found = True
                 break
-    # Compléter le nom si c'est une initiale
-    if is_initial(nom):
+    # Compléter le nom si vide ou initiale
+    if is_initial_or_empty(nom):
         for part in slug_parts:
-            if part.lower().startswith(str(nom).lower()[0]) and len(part) > 2:
+            if (nom == '' or part.lower().startswith(str(nom).lower()[0])) and len(part) > 2:
                 nom = part.capitalize()
                 found = True
                 break

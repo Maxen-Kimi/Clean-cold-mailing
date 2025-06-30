@@ -11,6 +11,12 @@ from contextlib import redirect_stdout
 print(f"Pandas version: {pd.__version__}")
 print(f"Openpyxl version: {openpyxl.__version__}")
 
+# === Liste centralisée des prénoms/noms portugais/brésiliens les plus fréquents (normalisée) ===
+EXCEPTIONS_COMPOSES_RAW = [
+    'joão', 'josé', 'carlos', 'pedro', 'fernandez', 'fernandes', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
+]
+EXCEPTIONS_COMPOSES = set([unidecode.unidecode(x).lower() for x in EXCEPTIONS_COMPOSES_RAW])
+
 def clean_name(name):
     if pd.isna(name):
         return ""
@@ -30,12 +36,6 @@ def generate_email(row, pattern):
     if pd.isna(pattern):
         return ""
     
-    # Liste d'exceptions (doit être la même que dans step3_clean_and_complete)
-    EXCEPTIONS_COMPOSES_RAW = [
-        'joão', 'josé', 'carlos', 'pedro', 'fernandez','fernandes', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
-    ]
-    EXCEPTIONS_COMPOSES = set([unidecode.unidecode(x).lower() for x in EXCEPTIONS_COMPOSES_RAW])
-
     def join_if_exception(name):
         parts = [unidecode.unidecode(p).lower() for p in str(name).strip().split()]
         if len(parts) > 1 and all(p in EXCEPTIONS_COMPOSES for p in parts):
@@ -291,16 +291,15 @@ def step3_clean_and_complete(filename='input.xlsx'):
             input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).capitalize() if pd.notna(x) else x)
 
         # Centraliser la liste d'exceptions et la fonction de normalisation
-        EXCEPTIONS_COMPOSES = set([
-            'joão', 'josé', 'carlos', 'pedro', 'luiz', 'marco', 'rafael', 'lucas', 'andré', 'ricardo', 'vitor', 'marcos', 'daniel', 'thiago', 'paulo', 'antônio', 'bruno', 'matheus', 'felipe', 'fernando', 'maria', 'ana', 'fernanda', 'juliana', 'camila', 'patrícia', 'larissa', 'bianca', 'carla', 'priscila', 'renata', 'amanda', 'caroline', 'daniela', 'tatiane', 'gabriela', 'luana', 'letícia', 'natália', 'bruna', 'silva', 'santos', 'oliveira', 'souza', 'rodrigues', 'ferreira', 'almeida', 'lima', 'carvalho', 'pereira', 'gomes', 'martins', 'barbosa', 'teixeira', 'rocha', 'monteiro', 'moura', 'azevedo', 'vieira', 'ribeiro', 'costa', 'nascimento', 'batista', 'araújo', 'campos', 'farias', 'pinto', 'cavalcanti', 'fonseca', 'machado', 'moreira', 'da', 'de', 'do', 'das', 'dos'
-        ])
         def is_composed_and_not_exception(cell):
             if pd.isna(cell):
                 return False
             parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
+            debug_exceptions = [p in EXCEPTIONS_COMPOSES for p in parts]
+            print(f"DEBUG: '{cell}' -> {parts} | exceptions: {debug_exceptions}")
             if len(parts) < 2:
                 return False
-            if all(p in EXCEPTIONS_COMPOSES for p in parts):
+            if all(debug_exceptions):
                 return False
             return True
         composed_mask = False

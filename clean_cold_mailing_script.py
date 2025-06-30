@@ -205,8 +205,7 @@ def step3_clean_and_complete(filename='input.xlsx'):
             for idx, row in input_df.iterrows():
                 prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
                 new_prenom, new_nom, found = complete_name_from_linkedin(row)
-                # Si la complétion a réussi (au moins un champ complété), on met à jour
-                if found and (new_prenom != prenom or new_nom != nom):
+                if found:
                     input_df.at[idx, 'Prénom'] = new_prenom
                     input_df.at[idx, 'Nom'] = new_nom
                 # Si la complétion a échoué (besoin mais pas trouvé), on marque seulement

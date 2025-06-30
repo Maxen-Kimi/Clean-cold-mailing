@@ -207,11 +207,7 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Nom' in input_df.columns:
             input_df['Nom'] = input_df['Nom'].apply(remove_titles)
 
-        # Nettoyer les noms
-        input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
-        input_df['Nom'] = input_df['Nom'].apply(clean_name)
-        
-        # === Complétion prénom/nom via LinkedIn ===
+        # === Complétion prénom/nom via LinkedIn (AVANT nettoyage) ===
         if 'URL Linkedin' in input_df.columns:
             if 'Email Qualification' not in input_df.columns:
                 input_df['Email Qualification'] = ''
@@ -225,6 +221,10 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 elif not found and (str(prenom).strip() == '' or len(str(prenom).strip()) <= 2 or str(nom).strip() == '' or len(str(nom).strip()) <= 2):
                     input_df.at[idx, 'Email Qualification'] = 'LinkedIn name not found'
 
+        # Nettoyer les noms (APRÈS complétion LinkedIn)
+        input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
+        input_df['Nom'] = input_df['Nom'].apply(clean_name)
+        
         # Sauvegarder le nombre de contacts avant suppression
         total_contacts_initial = len(input_df)
 

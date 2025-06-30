@@ -140,7 +140,6 @@ def complete_name_from_linkedin(row):
     if prenom.lower() == nom.lower():
         found = False
     
-    print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
     return prenom, nom, found
 
 def step3_clean_and_complete(filename='input.xlsx'):
@@ -271,12 +270,10 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Définir les différents cas
         generated_mask = (mask) & (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
         failed_mask = (mask) & ((input_df['New Email'].isna()) | (input_df['New Email'] == ''))
-        sac_mask = (mask) & (input_df['New Email'] == input_df['Email'])
         
         # Mettre à jour Email qualification selon les cas
         input_df.loc[generated_mask, 'Email Qualification'] = 'Generated'
         input_df.loc[failed_mask, 'Email Qualification'] = 'Not find'
-        input_df.loc[sac_mask, 'Email Qualification'] = 'SAC'
         
         # Supprimer uniquement la colonne temporaire de pattern
         if 'Email Pattern' in input_df.columns:
@@ -331,15 +328,13 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Calculer et afficher les statistiques détaillées
         total_generated = (input_df['Email Qualification'] == 'Generated').sum()
         total_not_find = (input_df['Email Qualification'] == 'Not find').sum()
-        total_sac = (input_df['Email Qualification'] == 'SAC').sum()
         total_composed = len(composed_df)
         print("\n📊 Statistiques des emails générés :")
         print(f"✅ Generated : {total_generated}")
         print(f"❌ Not find : {total_not_find}")
-        print(f"ℹ️ SAC : {total_sac}")
         print(f"📝 Noms composés : {total_composed}")
         print(f"🗑️ Contacts supprimés : {contacts_supprimes}")
-        print(f"📝 Total traité : {total_generated + total_not_find + total_sac + contacts_supprimes}")
+        print(f"📝 Total traité : {total_generated + total_not_find + contacts_supprimes}")
         
         return True
         

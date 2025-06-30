@@ -205,10 +205,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
             for idx, row in input_df.iterrows():
                 prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
                 new_prenom, new_nom, found = complete_name_from_linkedin(row)
-                if found:
+                # Si la complétion a réussi (au moins un champ complété), on met à jour
+                if found and (new_prenom != prenom or new_nom != nom):
                     input_df.at[idx, 'Prénom'] = new_prenom
                     input_df.at[idx, 'Nom'] = new_nom
-                elif (is_initial_or_empty(prenom) or is_initial_or_empty(nom)):
+                # Si la complétion a échoué (besoin mais pas trouvé), on marque seulement
+                elif not found and (str(prenom).strip() == '' or len(str(prenom).strip()) <= 2 or str(nom).strip() == '' or len(str(nom).strip()) <= 2):
                     input_df.at[idx, 'Email Qualification'] = 'LinkedIn name not found'
 
         # Sauvegarder le nombre de contacts avant suppression

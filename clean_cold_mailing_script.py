@@ -98,37 +98,50 @@ def capture_output(func, *args, **kwargs):
 def complete_name_from_linkedin(row):
     prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
     url = row.get('URL Linkedin', '')
+    
     def is_initial_or_empty(val):
         val = str(val).strip()
         return val == '' or len(val) == 1 or (len(val) == 2 and val[1] == '.')
+    
     if not is_initial_or_empty(prenom) and not is_initial_or_empty(nom):
         return prenom, nom, False  # Aucun champ à compléter, on sort sans rien changer
+    
     if pd.isna(url) or not isinstance(url, str) or '/in/' not in url:
         return prenom, nom, False  # Pas d'URL utilisable
+    
     # Nettoyage robuste du slug
     slug = url.split('/in/')[-1].split('/')[0]
     slug = slug.replace('.', '-').replace('_', '-')
     slug = re.sub(r'[^a-zA-Z\-]', '', slug)
     slug_parts = [part for part in slug.split('-') if part.isalpha()]
+    
     # Vérification stricte du nombre de mots
     found = False
     if not slug_parts:
         print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
         return prenom, nom, found
+    
+    # CORRECTION: Gérer les assignations correctement
     if is_initial_or_empty(prenom) and len(slug_parts) >= 1:
-        prenom = slug_parts[0].capitalize()
+        prenom = slug_parts[0].capitalize()  # Premier élément = prénom
         found = True
+    
     if is_initial_or_empty(nom):
         if len(slug_parts) >= 2:
-            nom = slug_parts[1].capitalize()
+            nom = slug_parts[1].capitalize()  # Deuxième élément = nom de famille
             found = True
         else:
-            found = False
-            print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
-            return prenom, nom, found
+            # Si on n'a qu'un seul élément et que le prénom était vide
+            # on ne peut pas déterminer le nom de famille
+            if is_initial_or_empty(row.get('Prénom', '')):
+                found = False
+                print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
+                return prenom, nom, found
+    
     # Vérification finale prénom != nom
-    if prenom == nom:
+    if prenom.lower() == nom.lower():
         found = False
+    
     print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
     return prenom, nom, found
 

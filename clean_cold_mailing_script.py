@@ -271,10 +271,17 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Définir les différents cas
         generated_mask = (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
         failed_mask = (input_df['New Email'].isna()) | (input_df['New Email'] == '')
-        
-        # Mettre à jour Email qualification selon les cas
-        input_df.loc[generated_mask, 'Email Qualification'] = 'Generated'
-        input_df.loc[failed_mask, 'Email Qualification'] = 'Not find'
+
+        # Mettre à jour Email qualification selon les cas, sans écraser 'nominative@pro'
+        def update_qualification(row):
+            if str(row['Email Qualification']) == 'nominative@pro':
+                return 'nominative@pro'
+            if generated_mask.loc[row.name]:
+                return 'Generated'
+            if failed_mask.loc[row.name]:
+                return 'Not find'
+            return row['Email Qualification']
+        input_df['Email Qualification'] = input_df.apply(update_qualification, axis=1)
         
         # Supprimer uniquement la colonne temporaire de pattern
         if 'Email Pattern' in input_df.columns:

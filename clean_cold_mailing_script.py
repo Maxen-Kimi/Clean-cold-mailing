@@ -296,7 +296,6 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 return False
             parts = [unidecode.unidecode(p).lower() for p in str(cell).strip().split()]
             debug_exceptions = [p in EXCEPTIONS_COMPOSES for p in parts]
-            print(f"DEBUG: '{cell}' -> {parts} | exceptions: {debug_exceptions}")
             if len(parts) < 2:
                 return False
             if all(debug_exceptions):

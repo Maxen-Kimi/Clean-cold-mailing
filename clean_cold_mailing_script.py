@@ -118,7 +118,6 @@ def complete_name_from_linkedin(row):
     # Vérification stricte du nombre de mots
     found = False
     if not slug_parts:
-        print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
         return prenom, nom, found
     
     # CORRECTION: Gérer les assignations correctement
@@ -135,7 +134,6 @@ def complete_name_from_linkedin(row):
             # on ne peut pas déterminer le nom de famille
             if is_initial_or_empty(row.get('Prénom', '')):
                 found = False
-                print(f"[DEBUG] Slug parts: {slug_parts} → Prénom: {prenom}, Nom: {nom}, Found: {found}")
                 return prenom, nom, found
     
     # Vérification finale prénom != nom

@@ -223,6 +223,29 @@ def step3_clean_and_complete(filename='input.xlsx'):
         # Nettoyer les noms (APRÈS complétion LinkedIn)
         input_df['Prénom'] = input_df['Prénom'].apply(clean_name)
         input_df['Nom'] = input_df['Nom'].apply(clean_name)
+
+        # Sauvegarder les prénoms et noms complets dans des colonnes temporaires
+        input_df['Prénom Complet'] = input_df['Prénom']
+        input_df['Nom Complet'] = input_df['Nom']
+
+        # Générer les emails avec les colonnes complètes
+        def get_generated_email(row):
+            pattern = row.get('Email Pattern', None)
+            if pattern:
+                # Utiliser les colonnes complètes pour la génération
+                row_for_email = row.copy()
+                row_for_email['Prénom'] = row['Prénom Complet']
+                row_for_email['Nom'] = row['Nom Complet']
+                return generate_email(row_for_email, pattern)
+            return ''
+        input_df['New Email'] = input_df.apply(get_generated_email, axis=1)
+
+        # Après génération, ne garder que le premier prénom/nom dans la feuille principale
+        input_df['Prénom'] = input_df['Prénom'].apply(lambda x: str(x).split()[0] if pd.notna(x) and str(x).strip() else x)
+        input_df['Nom'] = input_df['Nom'].apply(lambda x: str(x).split()[0] if pd.notna(x) and str(x).strip() else x)
+
+        # Supprimer les colonnes temporaires
+        input_df = input_df.drop(['Prénom Complet', 'Nom Complet'], axis=1)
         
         # Sauvegarder le nombre de contacts avant suppression
         total_contacts_initial = len(input_df)
@@ -260,14 +283,6 @@ def step3_clean_and_complete(filename='input.xlsx'):
             mask_total = reduce(lambda a, b: a | b, masks)
             contacts_supprimes = np.sum(mask_total)
 
-        # Créer une nouvelle colonne 'New Email' avec les emails générés selon le pattern de la base
-        def get_generated_email(row):
-            pattern = row.get('Email Pattern', None)
-            if pattern:
-                return generate_email(row, pattern)
-            return ''
-        input_df['New Email'] = input_df.apply(get_generated_email, axis=1)
-        
         # Définir les différents cas
         generated_mask = (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
         failed_mask = (input_df['New Email'].isna()) | (input_df['New Email'] == '')

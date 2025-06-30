@@ -7,6 +7,8 @@ import openpyxl
 import io
 import sys
 from contextlib import redirect_stdout
+from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 print(f"Pandas version: {pd.__version__}")
 print(f"Openpyxl version: {openpyxl.__version__}")
@@ -322,6 +324,35 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 if 'New Email' in composed_df.columns:
                     composed_df = composed_df.drop('New Email', axis=1)
                 composed_df.to_excel(writer, index=False, sheet_name='Composed_Names')
+
+        # === Coloration en rouge des emails nominative@pro non conformes au pattern ===
+        wb = load_workbook('cleaned_contacts.xlsx')
+        ws = wb['Contacts']
+        # Trouver les index des colonnes Email et Email Qualification
+        header = [cell.value for cell in next(ws.iter_rows(min_row=1, max_row=1))]
+        email_col_idx = header.index('Email') + 1
+        qualif_col_idx = header.index('Email Qualification') + 1
+        societe_col_idx = header.index('Société') + 1
+        prenom_col_idx = header.index('Prénom') + 1
+        nom_col_idx = header.index('Nom') + 1
+        # Recharger les patterns
+        patterns_df = pd.read_excel('detected_patterns.xlsx')
+        patterns_dict = dict(zip(patterns_df['Société'], patterns_df['Pattern']))
+        rouge = PatternFill(start_color='FFFF0000', end_color='FFFF0000', fill_type='solid')
+        for row in ws.iter_rows(min_row=2):
+            email = str(row[email_col_idx-1].value) if row[email_col_idx-1].value is not None else ''
+            qualif = str(row[qualif_col_idx-1].value) if row[qualif_col_idx-1].value is not None else ''
+            societe = str(row[societe_col_idx-1].value) if row[societe_col_idx-1].value is not None else ''
+            prenom = row[prenom_col_idx-1].value
+            nom = row[nom_col_idx-1].value
+            pattern = patterns_dict.get(societe, None)
+            if qualif == 'nominative@pro' and pattern:
+                # Générer l'email attendu
+                row_dict = {'Prénom': prenom, 'Nom': nom, 'Société': societe}
+                email_attendu = generate_email(row_dict, pattern)
+                if email_attendu and email.lower() != email_attendu.lower():
+                    row[email_col_idx-1].fill = rouge
+        wb.save('cleaned_contacts.xlsx')
 
         # Calculer et afficher les statistiques détaillées
         total_generated = (input_df['Email Qualification'] == 'Generated').sum()

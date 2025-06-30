@@ -209,7 +209,7 @@ def step3_clean_and_complete(filename='input.xlsx'):
                     input_df.at[idx, 'Prénom'] = new_prenom
                     input_df.at[idx, 'Nom'] = new_nom
                 # Si la complétion a échoué (besoin mais pas trouvé), on marque seulement
-                elif not found and (is_initial_or_empty(prenom) or is_initial_or_empty(nom)):
+                elif not found and (str(prenom).strip() == '' or len(str(prenom).strip()) <= 2 or str(nom).strip() == '' or len(str(nom).strip()) <= 2):
                     input_df.at[idx, 'Email Qualification'] = 'LinkedIn name not found'
 
         # Sauvegarder le nombre de contacts avant suppression
@@ -253,19 +253,9 @@ def step3_clean_and_complete(filename='input.xlsx'):
         
         # Générer les nouveaux emails là où nécessaire dans la nouvelle colonne
         mask = (input_df['Email'].isna() | (input_df['Email'] == '')) | (input_df['Email Qualification'].astype(str).str.contains('catch_all@pro', na=False))
-        def can_generate_email(row):
-            # On ne génère pas d'email si prénom ou nom est vide ou trop court
-            prenom, nom = row.get('Prénom', ''), row.get('Nom', '')
-            if len(str(prenom).strip()) <= 1 or len(str(nom).strip()) <= 1:
-                return False
-            if row.get('Email Qualification', '') == 'LinkedIn name not found':
-                return False
-            return True
-        input_df.loc[mask & input_df.apply(can_generate_email, axis=1), 'New Email'] = input_df[mask & input_df.apply(can_generate_email, axis=1)].apply(
+        input_df.loc[mask, 'New Email'] = input_df[mask].apply(
             lambda row: generate_email(row, row['Email Pattern']), axis=1
         )
-        # Pour les autres, on laisse New Email vide
-        input_df.loc[mask & ~input_df.apply(can_generate_email, axis=1), 'New Email'] = ''
         
         # Définir les différents cas
         generated_mask = (mask) & (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])

@@ -260,18 +260,17 @@ def step3_clean_and_complete(filename='input.xlsx'):
             mask_total = reduce(lambda a, b: a | b, masks)
             contacts_supprimes = np.sum(mask_total)
 
-        # Créer une nouvelle colonne 'New Email' avec les valeurs de 'Email' existantes
-        input_df['New Email'] = input_df['Email'].copy()
-        
-        # Générer les nouveaux emails là où nécessaire dans la nouvelle colonne
-        mask = (input_df['Email'].isna() | (input_df['Email'] == '')) | (input_df['Email Qualification'].astype(str).str.contains('catch_all@pro', na=False))
-        input_df.loc[mask, 'New Email'] = input_df[mask].apply(
-            lambda row: generate_email(row, row['Email Pattern']), axis=1
-        )
+        # Créer une nouvelle colonne 'New Email' avec les emails générés selon le pattern de la base
+        def get_generated_email(row):
+            pattern = row.get('Email Pattern', None)
+            if pattern:
+                return generate_email(row, pattern)
+            return ''
+        input_df['New Email'] = input_df.apply(get_generated_email, axis=1)
         
         # Définir les différents cas
-        generated_mask = (mask) & (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
-        failed_mask = (mask) & ((input_df['New Email'].isna()) | (input_df['New Email'] == ''))
+        generated_mask = (input_df['New Email'] != '') & (input_df['New Email'] != input_df['Email'])
+        failed_mask = (input_df['New Email'].isna()) | (input_df['New Email'] == '')
         
         # Mettre à jour Email qualification selon les cas
         input_df.loc[generated_mask, 'Email Qualification'] = 'Generated'

@@ -434,6 +434,8 @@ def analyze_email_patterns(filename=None):
                 if soc and dom:
                     website_domains[soc] = dom
         
+        # On va recalculer les patterns et domaines pour toutes les entreprises du fichier d'entrée
+        entreprises_traitees = set()
         for index, row in df.iterrows():
             try:
                 if not isinstance(row['Email'], str):
@@ -526,8 +528,7 @@ def analyze_email_patterns(filename=None):
                     'Pattern': full_pattern,
                     'Domaine': domaines_str
                 })
-                
-                # Ajouter l'entreprise à l'ensemble des nouvelles entreprises
+                entreprises_traitees.add(row['Société'])
                 new_companies.add(row['Société'])
                 
             except Exception as e:
@@ -540,25 +541,39 @@ def analyze_email_patterns(filename=None):
         
         # Charger les patterns existants s'ils existent
         output_file = 'detected_patterns.xlsx'
-        existing_companies = set()
-        
+        existing_patterns_df = None
         if os.path.exists(output_file):
             existing_patterns_df = pd.read_excel(output_file)
-            existing_companies = set(existing_patterns_df['Société'])
-            new_patterns_df = pd.DataFrame(patterns)
-            
-            # Combiner les anciens et nouveaux patterns
-            patterns_df = pd.concat([existing_patterns_df, new_patterns_df])
-            # Supprimer les doublons en gardant la première occurrence
-            patterns_df = patterns_df.drop_duplicates(subset=['Société'], keep='first')
-        else:
-            # Si le fichier n'existe pas, créer un nouveau DataFrame
-            patterns_df = pd.DataFrame(patterns).drop_duplicates(subset=['Société'])
+        
+        # On va remplacer/mettre à jour les patterns pour toutes les entreprises du fichier d'entrée
+        patterns_df = pd.DataFrame(patterns)
+        if existing_patterns_df is not None:
+            # On garde les entreprises qui ne sont pas dans le nouveau fichier d'entrée
+            autres = existing_patterns_df[~existing_patterns_df['Société'].isin(entreprises_traitees)]
+            patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
         
         # Sauvegarder le résultat
         patterns_df.to_excel(output_file, index=False)
         
+        # === Post-traitement : compléter Domaine à partir du Pattern si vide ===
+        # Recharger le fichier pour modification
+        df_patterns = pd.read_excel(output_file)
+        for idx, row in df_patterns.iterrows():
+            domaine = str(row.get('Domaine', '')).strip()
+            pattern = str(row.get('Pattern', '')).strip()
+            if (not domaine or domaine == 'nan') and '@' in pattern:
+                # Extraire le domaine après le @
+                dom = extract_domain_from_email_or_url(pattern.split('@')[-1])
+                if dom:
+                    df_patterns.at[idx, 'Domaine'] = dom
+        # Réécrire le fichier avec la colonne Domaine complétée
+        df_patterns.to_excel(output_file, index=False)
+        
         # Calculer les nouvelles entreprises ajoutées
+        if existing_patterns_df is not None:
+            existing_companies = set(existing_patterns_df['Société'])
+        else:
+            existing_companies = set()
         newly_added_companies = new_companies - existing_companies
         
         print(f"✅ Patterns détectés et sauvegardés dans {output_file}")

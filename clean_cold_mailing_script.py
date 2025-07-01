@@ -565,11 +565,10 @@ def analyze_email_patterns(filename=None):
             if (not domaine or domaine == 'nan') and '@' in pattern:
                 # Extraire le domaine après le @
                 dom = extract_domain_from_email_or_url(pattern.split('@')[-1])
-                # Correction : si dom est 'company.com' ou 'company.fr', générer à partir du nom de la société
-                if dom in ['company.com', 'company.fr'] and societe:
-                    # Nettoyer le nom de la société pour générer un domaine
+                # Remplacer toute occurrence de 'company' par le nom de la société nettoyé
+                if 'company' in dom and societe:
                     societe_clean = re.sub(r'[^a-z0-9]', '', unidecode.unidecode(societe.lower()))
-                    dom = societe_clean + '.com'
+                    dom = dom.replace('company', societe_clean)
                 if dom:
                     df_patterns.at[idx, 'Domaine'] = dom
         # Réécrire le fichier avec la colonne Domaine complétée

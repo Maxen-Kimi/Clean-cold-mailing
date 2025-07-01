@@ -19,6 +19,27 @@ EXCEPTIONS_COMPOSES_RAW = [
 ]
 EXCEPTIONS_COMPOSES = set([unidecode.unidecode(x).lower() for x in EXCEPTIONS_COMPOSES_RAW])
 
+def extract_domain_from_email_or_url(value):
+    """
+    Extrait le domaine d'un email (après le @) ou d'une URL (ex: https://www.company.com -> company.com).
+    Retourne une chaîne vide si rien n'est trouvé.
+    """
+    if pd.isna(value) or not isinstance(value, str) or not value.strip():
+        return ''
+    value = value.strip().lower()
+    # Cas email
+    if '@' in value and not value.startswith('http'):
+        return value.split('@')[-1]
+    # Cas URL
+    match = re.search(r"(?:https?://)?(?:www\.)?([^/]+)", value)
+    if match:
+        domaine = match.group(1)
+        # On retire les sous-domaines courants
+        if domaine.startswith('www.'):
+            domaine = domaine[4:]
+        return domaine
+    return ''
+
 def clean_name(name):
     if pd.isna(name):
         return ""
@@ -403,6 +424,16 @@ def analyze_email_patterns(filename=None):
         patterns = []
         new_companies = set()  # Pour suivre les nouvelles entreprises
         
+        # Préparer un mapping Société -> domaine site web (si colonne présente)
+        website_domains = {}
+        if 'Company Website URL' in df.columns:
+            for idx, row in df.iterrows():
+                soc = row['Société']
+                url = row['Company Website URL']
+                dom = extract_domain_from_email_or_url(url)
+                if soc and dom:
+                    website_domains[soc] = dom
+        
         for index, row in df.iterrows():
             try:
                 if not isinstance(row['Email'], str):
@@ -423,7 +454,7 @@ def analyze_email_patterns(filename=None):
                     continue
 
                 # Vérifier si l'email a la qualification "nominative@pro" ou "Generated"
-                if not (('nominative@pro' in str(row['Email Qualification'])) or ('Generated' in str(row['Email Qualification']))):
+                if not (("nominative@pro" in str(row['Email Qualification'])) or ("Generated" in str(row['Email Qualification']))):
                     continue
                 
                 local_part = email.split('@')[0]
@@ -478,10 +509,22 @@ def analyze_email_patterns(filename=None):
                     continue
                 
                 full_pattern = f"{pattern}@{domain.replace(company, 'company')}"
-                
+                # Domaine du pattern d'email
+                email_domain = extract_domain_from_email_or_url(email)
+                # Domaine du site web (si dispo)
+                soc = row['Société']
+                web_domain = website_domains.get(soc, '')
+                # Fusionner les domaines (éviter doublons)
+                domaines = set()
+                if email_domain:
+                    domaines.add(email_domain)
+                if web_domain and web_domain != email_domain:
+                    domaines.add(web_domain)
+                domaines_str = ';'.join(sorted(domaines)) if domaines else ''
                 patterns.append({
                     'Société': row['Société'],
-                    'Pattern': full_pattern
+                    'Pattern': full_pattern,
+                    'Domaine': domaines_str
                 })
                 
                 # Ajouter l'entreprise à l'ensemble des nouvelles entreprises

@@ -251,7 +251,26 @@ def step3_clean_and_complete(filename='input.xlsx'):
 
         # Générer les emails avec les colonnes complètes
         def get_generated_email(row):
-            pattern = row.get('Email Pattern', None)
+            # Extraire le domaine de Company Website URL si présent
+            domain_from_url = ''
+            if 'Company Website URL' in row and pd.notna(row['Company Website URL']):
+                domain_from_url = extract_domain_from_email_or_url(row['Company Website URL'])
+            pattern = None
+            # Recherche dans detected_patterns.xlsx
+            # 1. Par domaine (dans la liste concaténée si besoin)
+            if domain_from_url:
+                for idx, pat_row in patterns_df.iterrows():
+                    domaines = str(pat_row.get('Domaine', '')).split(';')
+                    domaines = [d.strip().lower() for d in domaines if d.strip()]
+                    if domain_from_url.lower() in domaines:
+                        pattern = pat_row['Pattern']
+                        break
+            # 2. Sinon, par société
+            if pattern is None and 'Société' in row and pd.notna(row['Société']):
+                for idx, pat_row in patterns_df.iterrows():
+                    if str(row['Société']).strip().lower() == str(pat_row['Société']).strip().lower():
+                        pattern = pat_row['Pattern']
+                        break
             if pattern:
                 # Utiliser les colonnes complètes pour la génération
                 row_for_email = row.copy()

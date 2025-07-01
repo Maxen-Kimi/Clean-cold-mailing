@@ -63,7 +63,9 @@ def generate_email(row, pattern):
         parts = [unidecode.unidecode(p).lower() for p in str(name).strip().split()]
         if len(parts) > 1 and all(p in EXCEPTIONS_COMPOSES for p in parts):
             return ''.join(parts)
-        return clean_name(name)
+        # Utiliser uniquement le premier mot (prénom ou nom)
+        first_part = str(name).strip().split()[0] if str(name).strip() else ''
+        return clean_name(first_part)
 
     firstname = join_if_exception(row['Prénom'])
     lastname = join_if_exception(row['Nom'])

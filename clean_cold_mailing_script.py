@@ -377,14 +377,16 @@ def step3_clean_and_complete(filename='input.xlsx'):
             input_df = input_df[~composed_mask].copy()
 
         # Sauvegarder le résultat final dans deux feuilles du même fichier Excel
-        columns_to_save = [col for col in input_df.columns]
+        columns_to_save = [col for col in [
+            'Prénom', 'Nom', 'URL Linkedin', 'Société', 'Email', 'Email Qualification', 'New Email'
+        ] if col in input_df.columns]
         with pd.ExcelWriter('cleaned_contacts.xlsx', engine='openpyxl') as writer:
             input_df[columns_to_save].to_excel(writer, index=False, sheet_name='Contacts')
             if not composed_df.empty:
-                # Supprimer la colonne 'New Email' de la feuille Composed_Names
-                if 'New Email' in composed_df.columns:
-                    composed_df = composed_df.drop('New Email', axis=1)
-                composed_df.to_excel(writer, index=False, sheet_name='Composed_Names')
+                composed_columns_to_save = [col for col in [
+                    'Prénom', 'Nom', 'URL Linkedin', 'Société', 'Email', 'Email Qualification', 'New Email'
+                ] if col in composed_df.columns]
+                composed_df[composed_columns_to_save].to_excel(writer, index=False, sheet_name='Composed_Names')
 
         # === Coloration en rouge des emails nominative@pro non conformes au pattern ===
         wb = load_workbook('cleaned_contacts.xlsx')
@@ -707,10 +709,13 @@ def normalize_special_characters(filename=None, output_filename_web='normalized_
         else:
             final_output_filename = f"{os.path.splitext(filename)[0]}_normalized.xlsx"
 
+        # Définir les colonnes à garder dans le fichier de sortie
+        columns_to_save = [col for col in [
+            'Prénom', 'Nom', 'URL Linkedin', 'Société', 'Email', 'Email Qualification', 'New Email'
+        ] if col in df.columns]
         # Sauvegarder le résultat
-        df.to_excel(final_output_filename, index=False)
+        df[columns_to_save].to_excel(final_output_filename, index=False)
         print(f"✅ Caractères spéciaux normalisés.")
-        
         return True
         
     except Exception as e:

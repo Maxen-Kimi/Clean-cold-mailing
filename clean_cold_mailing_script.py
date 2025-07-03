@@ -494,6 +494,8 @@ def analyze_email_patterns(filename=None):
                 if key and dom:
                     website_domains[key] = dom
         entreprises_traitees = set()
+        # Déterminer si on doit filtrer sur la qualification
+        filter_on_qualification = 'emailqualification' in df.columns
         for index, row in df.iterrows():
             try:
                 if not isinstance(row[col_map['email']], str):

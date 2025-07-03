@@ -572,7 +572,7 @@ def analyze_email_patterns(filename=None):
                     domaines.add(web_domain)
                 domaines_str = ';'.join(sorted(domaines)) if domaines else ''
                 patterns.append({
-                    'Clé Entreprise': company_key,
+                    'Société': company_key,
                     'Pattern': full_pattern,
                     'Domaine': domaines_str
                 })
@@ -590,7 +590,7 @@ def analyze_email_patterns(filename=None):
             existing_patterns_df = pd.read_excel(output_file)
         patterns_df = pd.DataFrame(patterns)
         if existing_patterns_df is not None:
-            autres = existing_patterns_df[~existing_patterns_df['Clé Entreprise'].isin(entreprises_traitees)]
+            autres = existing_patterns_df[~existing_patterns_df['Société'].isin(entreprises_traitees)]
             patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
         patterns_df.to_excel(output_file, index=False)
         # === Post-traitement : compléter Domaine à partir du Pattern si vide ===
@@ -598,7 +598,7 @@ def analyze_email_patterns(filename=None):
         for idx, row in df_patterns.iterrows():
             domaine = str(row.get('Domaine', '')).strip()
             pattern = str(row.get('Pattern', '')).strip()
-            cle_entreprise = str(row.get('Clé Entreprise', '')).strip()
+            cle_entreprise = str(row.get('Société', '')).strip()
             if (not domaine or domaine == 'nan') and '@' in pattern:
                 dom = extract_domain_from_email_or_url(pattern.split('@')[-1])
                 if 'company' in dom and cle_entreprise:
@@ -608,7 +608,7 @@ def analyze_email_patterns(filename=None):
                     df_patterns.at[idx, 'Domaine'] = dom
         df_patterns.to_excel(output_file, index=False)
         if existing_patterns_df is not None:
-            existing_companies = set(existing_patterns_df['Clé Entreprise'])
+            existing_companies = set(existing_patterns_df['Société'])
         else:
             existing_companies = set()
         newly_added_companies = new_companies - existing_companies

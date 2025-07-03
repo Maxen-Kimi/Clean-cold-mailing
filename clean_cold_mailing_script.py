@@ -437,58 +437,78 @@ def analyze_email_patterns(filename=None):
     
     try:
         df = pd.read_excel(filename)
+        import unidecode
+        # 1. Normalisation des noms de colonnes
+        def normalize_col(col):
+            return unidecode.unidecode(str(col)).lower().replace('-', '').replace(' ', '').replace('_', '')
+        df.columns = [normalize_col(col) for col in df.columns]
+        # 2. Dictionnaire des variantes
+        col_variants = {
+            'email': ['email', 'e-mail', 'e_mail', 'courriel', 'mail', 'adresseemail', 'adressemail'],
+            'prenom': ['prenom', 'prénom', 'first_name', 'firstname'],
+            'nom': ['nom', 'last_name', 'lastname', 'surname'],
+            'domaine': ['domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb'],
+            'societe': ['societe', 'société', 'company', 'entreprise', 'organisation']
+        }
+        # 3. Mapping automatique
+        col_map = {}
+        for key, variants in col_variants.items():
+            for v in variants:
+                if v in df.columns:
+                    col_map[key] = v
+                    break
         # Nouvelle logique : Email, Prénom, Nom, et au moins un identifiant d'entreprise
-        possible_keys = ['Domaine', 'Company Website URL', 'Société']
-        required_columns = ['Email', 'Prénom', 'Nom']
-        if not all(col in df.columns for col in required_columns) or not any(col in df.columns for col in possible_keys):
+        possible_keys = [col_map.get('domaine'), col_map.get('societe')]
+        required_columns = [col_map.get('email'), col_map.get('prenom'), col_map.get('nom')]
+        if not all(col is not None for col in required_columns) or not any(col is not None for col in possible_keys):
             print("❌ Erreur: Le fichier doit contenir les colonnes: Email, Prénom, Nom, et au moins une colonne parmi Domaine, Company Website URL, Société")
             return False
         # On retire les lignes où Email, Prénom, Nom ou aucune clé d'entreprise n'est présente
         def has_company_key(row):
-            if 'Domaine' in df.columns and pd.notna(row.get('Domaine', '')) and str(row.get('Domaine', '')).strip():
+            if col_map.get('domaine') and pd.notna(row.get(col_map['domaine'], '')) and str(row.get(col_map['domaine'], '')).strip():
                 return True
-            if 'Company Website URL' in df.columns and pd.notna(row.get('Company Website URL', '')) and str(row.get('Company Website URL', '')).strip():
+            if 'companywebsiteurl' in df.columns and pd.notna(row.get('companywebsiteurl', '')) and str(row.get('companywebsiteurl', '')).strip():
                 return True
-            if 'Société' in df.columns and pd.notna(row.get('Société', '')) and str(row.get('Société', '')).strip():
+            if col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
                 return True
             return False
-        df = df.dropna(subset=['Email', 'Prénom', 'Nom'])
+        df = df.dropna(subset=required_columns)
         df = df[df.apply(has_company_key, axis=1)]
         patterns = []
         new_companies = set()  # Pour suivre les nouvelles clés d'entreprise
         # Préparer un mapping clé d'entreprise -> domaine site web (si colonne présente)
         website_domains = {}
-        if 'Company Website URL' in df.columns:
+        if 'companywebsiteurl' in df.columns:
             for idx, row in df.iterrows():
                 # Détermination de la clé d'entreprise (priorité Domaine > URL > Société)
-                if 'Domaine' in df.columns and pd.notna(row.get('Domaine', '')) and str(row.get('Domaine', '')).strip():
-                    key = str(row['Domaine']).strip().lower()
-                elif 'Company Website URL' in df.columns and pd.notna(row.get('Company Website URL', '')) and str(row.get('Company Website URL', '')).strip():
-                    key = extract_domain_from_email_or_url(row['Company Website URL'])
-                elif 'Société' in df.columns and pd.notna(row.get('Société', '')) and str(row.get('Société', '')).strip():
-                    key = str(row['Société']).strip().lower()
+                if col_map.get('domaine') and pd.notna(row.get(col_map['domaine'], '')) and str(row.get(col_map['domaine'], '')).strip():
+                    key = str(row[col_map['domaine']]).strip().lower()
+                elif 'companywebsiteurl' in df.columns and pd.notna(row.get('companywebsiteurl', '')) and str(row.get('companywebsiteurl', '')).strip():
+                    key = extract_domain_from_email_or_url(row['companywebsiteurl'])
+                elif col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
+                    key = str(row[col_map['societe']]).strip().lower()
                 else:
                     continue
-                url = row.get('Company Website URL', '')
+                url = row.get('companywebsiteurl', '')
                 dom = extract_domain_from_email_or_url(url)
                 if key and dom:
                     website_domains[key] = dom
         entreprises_traitees = set()
         for index, row in df.iterrows():
             try:
-                if not isinstance(row['Email'], str):
+                if not isinstance(row[col_map['email']], str):
                     print(f"⚠️ Ligne {index}: Email non valide")
                     continue
-                email = str(row['Email']).lower().strip()
-                firstname = clean_name(row['Prénom'])
-                lastname = clean_name(row['Nom'])
+                email = str(row[col_map['email']]).lower().strip()
+                firstname = clean_name(row[col_map['prenom']])
+                lastname = clean_name(row[col_map['nom']])
                 # Détermination de la clé d'entreprise (priorité Domaine > URL > Société)
-                if 'Domaine' in df.columns and pd.notna(row.get('Domaine', '')) and str(row.get('Domaine', '')).strip():
-                    company_key = str(row['Domaine']).strip().lower()
-                elif 'Company Website URL' in df.columns and pd.notna(row.get('Company Website URL', '')) and str(row.get('Company Website URL', '')).strip():
-                    company_key = extract_domain_from_email_or_url(row['Company Website URL'])
-                elif 'Société' in df.columns and pd.notna(row.get('Société', '')) and str(row.get('Société', '')).strip():
-                    company_key = str(row['Société']).strip().lower()
+                if col_map.get('domaine') and pd.notna(row.get(col_map['domaine'], '')) and str(row.get(col_map['domaine'], '')).strip():
+                    company_key = str(row[col_map['domaine']]).strip().lower()
+                elif 'companywebsiteurl' in df.columns and pd.notna(row.get('companywebsiteurl', '')) and str(row.get('companywebsiteurl', '')).strip():
+                    company_key = extract_domain_from_email_or_url(row['companywebsiteurl'])
+                elif col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
+                    company_key = str(row[col_map['societe']]).strip().lower()
                 else:
                     print(f"⚠️ Ligne {index}: Pas de clé d'entreprise trouvée")
                     continue
@@ -498,7 +518,7 @@ def analyze_email_patterns(filename=None):
                 if '@' not in email:
                     print(f"⚠️ Ligne {index}: Format d'email invalide")
                     continue
-                if not (("nominative@pro" in str(row.get('Email Qualification', ''))) or ("Generated" in str(row.get('Email Qualification', '')))):
+                if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
                     continue
                 local_part = email.split('@')[0]
                 domain = email.split('@')[1]

@@ -518,8 +518,11 @@ def analyze_email_patterns(filename=None):
                 if '@' not in email:
                     print(f"⚠️ Ligne {index}: Format d'email invalide")
                     continue
-                if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
-                    continue
+                # Déterminer si on doit filtrer sur la qualification
+                filter_on_qualification = 'emailqualification' in df.columns
+                if filter_on_qualification:
+                    if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
+                        continue
                 local_part = email.split('@')[0]
                 domain = email.split('@')[1]
                 firstname_initial = firstname[0] if firstname else ''

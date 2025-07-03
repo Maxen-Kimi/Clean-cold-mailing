@@ -512,14 +512,18 @@ def analyze_email_patterns(filename=None):
                 else:
                     print(f"⚠️ Ligne {index}: Pas de clé d'entreprise trouvée")
                     continue
+                # === Correction : récupérer le vrai nom de la société pour la colonne Société ===
+                if col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
+                    societe_val = str(row[col_map['societe']]).strip()
+                else:
+                    societe_val = company_key  # fallback domaine si pas de société
                 if not email or not firstname or not lastname or not company_key:
                     print(f"⚠️ Ligne {index}: Données manquantes")
                     continue
                 if '@' not in email:
                     print(f"⚠️ Ligne {index}: Format d'email invalide")
                     continue
-                # Déterminer si on doit filtrer sur la qualification
-                filter_on_qualification = 'emailqualification' in df.columns
+                # Nouvelle logique :
                 if filter_on_qualification:
                     if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
                         continue
@@ -560,7 +564,9 @@ def analyze_email_patterns(filename=None):
                 if not pattern_found:
                     print(f"⚠️ Ligne {index}: Pattern non reconnu pour {email}")
                     continue
-                full_pattern = f"{pattern}@{domain.replace(company_key, 'company')}"
+                # === Correction : utiliser le vrai domaine pour le pattern ===
+                vrai_domaine = company_key
+                full_pattern = f"{pattern}@{vrai_domaine}"
                 # Domaine du pattern d'email
                 email_domain = extract_domain_from_email_or_url(email)
                 # Domaine du site web (si dispo)
@@ -572,9 +578,9 @@ def analyze_email_patterns(filename=None):
                     domaines.add(web_domain)
                 domaines_str = ';'.join(sorted(domaines)) if domaines else ''
                 patterns.append({
-                    'Société': company_key,
+                    'Société': societe_val,
                     'Pattern': full_pattern,
-                    'Domaine': domaines_str
+                    'Domaine': vrai_domaine
                 })
                 entreprises_traitees.add(company_key)
                 new_companies.add(company_key)

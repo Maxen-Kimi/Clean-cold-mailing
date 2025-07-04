@@ -504,28 +504,20 @@ def analyze_email_patterns(filename=None):
                 email = str(row[col_map['email']]).lower().strip()
                 firstname = clean_name(row[col_map['prenom']])
                 lastname = clean_name(row[col_map['nom']])
-                # Détermination de la clé d'entreprise (priorité Domaine > URL > Société)
+                # Détermination du domaine (clé unique)
                 if col_map.get('domaine') and pd.notna(row.get(col_map['domaine'], '')) and str(row.get(col_map['domaine'], '')).strip():
-                    company_key = str(row[col_map['domaine']]).strip().lower()
+                    vrai_domaine = str(row[col_map['domaine']]).strip().lower()
                 elif 'companywebsiteurl' in df.columns and pd.notna(row.get('companywebsiteurl', '')) and str(row.get('companywebsiteurl', '')).strip():
-                    company_key = extract_domain_from_email_or_url(row['companywebsiteurl'])
-                elif col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
-                    company_key = str(row[col_map['societe']]).strip().lower()
+                    vrai_domaine = extract_domain_from_email_or_url(row['companywebsiteurl'])
                 else:
-                    print(f"⚠️ Ligne {index}: Pas de clé d'entreprise trouvée")
+                    print(f"⚠️ Ligne {index}: Pas de domaine trouvé")
                     continue
-                # === Correction : récupérer le vrai nom de la société pour la colonne Société ===
-                if col_map.get('societe') and pd.notna(row.get(col_map['societe'], '')) and str(row.get(col_map['societe'], '')).strip():
-                    societe_val = str(row[col_map['societe']]).strip()
-                else:
-                    societe_val = company_key  # fallback domaine si pas de société
-                if not email or not firstname or not lastname or not company_key:
+                if not email or not firstname or not lastname or not vrai_domaine:
                     print(f"⚠️ Ligne {index}: Données manquantes")
                     continue
                 if '@' not in email:
                     print(f"⚠️ Ligne {index}: Format d'email invalide")
                     continue
-                # Nouvelle logique :
                 if filter_on_qualification:
                     if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
                         continue
@@ -566,26 +558,13 @@ def analyze_email_patterns(filename=None):
                 if not pattern_found:
                     print(f"⚠️ Ligne {index}: Pattern non reconnu pour {email}")
                     continue
-                # === Correction : utiliser le vrai domaine pour le pattern ===
-                vrai_domaine = company_key
                 full_pattern = f"{pattern}@{vrai_domaine}"
-                # Domaine du pattern d'email
-                email_domain = extract_domain_from_email_or_url(email)
-                # Domaine du site web (si dispo)
-                web_domain = website_domains.get(company_key, '')
-                domaines = set()
-                if email_domain:
-                    domaines.add(email_domain)
-                if web_domain and web_domain != email_domain:
-                    domaines.add(web_domain)
-                domaines_str = ';'.join(sorted(domaines)) if domaines else ''
                 patterns.append({
-                    'Société': societe_val,
-                    'Pattern': full_pattern,
-                    'Domaine': vrai_domaine
+                    'Domaine': vrai_domaine,
+                    'Pattern': full_pattern
                 })
-                entreprises_traitees.add(company_key)
-                new_companies.add(company_key)
+                entreprises_traitees.add(vrai_domaine)
+                new_companies.add(vrai_domaine)
             except Exception as e:
                 print(f"⚠️ Erreur ligne {index}: {str(e)}")
                 continue
@@ -598,7 +577,7 @@ def analyze_email_patterns(filename=None):
             existing_patterns_df = pd.read_excel(output_file)
         patterns_df = pd.DataFrame(patterns)
         if existing_patterns_df is not None:
-            autres = existing_patterns_df[~existing_patterns_df['Société'].isin(entreprises_traitees)]
+            autres = existing_patterns_df[~existing_patterns_df['Domaine'].isin(entreprises_traitees)]
             patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
         patterns_df.to_excel(output_file, index=False)
         # === Post-traitement : compléter Domaine à partir du Pattern si vide ===
@@ -606,28 +585,24 @@ def analyze_email_patterns(filename=None):
         for idx, row in df_patterns.iterrows():
             domaine = str(row.get('Domaine', '')).strip()
             pattern = str(row.get('Pattern', '')).strip()
-            cle_entreprise = str(row.get('Société', '')).strip()
             if (not domaine or domaine == 'nan') and '@' in pattern:
                 dom = extract_domain_from_email_or_url(pattern.split('@')[-1])
-                if 'company' in dom and cle_entreprise:
-                    cle_clean = re.sub(r'[^a-z0-9]', '', unidecode.unidecode(cle_entreprise.lower()))
-                    dom = dom.replace('company', cle_clean)
                 if dom:
                     df_patterns.at[idx, 'Domaine'] = dom
         df_patterns.to_excel(output_file, index=False)
         if existing_patterns_df is not None:
-            existing_companies = set(existing_patterns_df['Société'])
+            existing_companies = set(existing_patterns_df['Domaine'])
         else:
             existing_companies = set()
         newly_added_companies = new_companies - existing_companies
         print(f"✅ Patterns détectés et sauvegardés dans {output_file}")
         print(f"   {len(patterns_df)} patterns uniques au total")
         if newly_added_companies:
-            print("\n📋 Nouvelles clés d'entreprise ajoutées :")
+            print("\n📋 Nouveaux domaines ajoutés :")
             for company in sorted(newly_added_companies):
                 print(f"   • {company}")
         else:
-            print("\nℹ️ Aucune nouvelle clé d'entreprise n'a été ajoutée")
+            print("\nℹ️ Aucun nouveau domaine n'a été ajouté")
         return True
     except Exception as e:
         print(f"❌ Erreur lors de l'analyse: {str(e)}")

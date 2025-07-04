@@ -501,10 +501,26 @@ def analyze_email_patterns(filename=None):
         entreprises_traitees = set()
         # Déterminer si on doit filtrer sur la qualification
         filter_on_qualification = 'emailqualification' in df.columns
+        # --- Compteurs pour le résumé global ---
+        total_lignes = 0
+        lignes_ignores = 0
+        patterns_non_reconnus = 0
+        domaines_ambigu = 0
+        nouveaux_domaines = set()
+        # --- Nouvelle logique : historique des patterns par domaine avec pourcentage ---
+        # Charger l'historique si existant
+        pattern_counter = defaultdict(lambda: defaultdict(int))  # {domaine: {pattern: count}}
+        if existing_patterns_df is not None and 'Domaine' in existing_patterns_df.columns and 'Pattern' in existing_patterns_df.columns and 'Count' in existing_patterns_df.columns:
+            for _, row in existing_patterns_df.iterrows():
+                dom = str(row['Domaine']).strip().lower()
+                pat = str(row['Pattern']).strip().lower()
+                count = int(row['Count']) if 'Count' in row and not pd.isna(row['Count']) else 1
+                pattern_counter[dom][pat] += count
+        # Compter les patterns du fichier courant
         for index, row in df.iterrows():
             try:
                 if not isinstance(row[col_map['email']], str):
-                    print(f"⚠️ Ligne {index}: Email non valide")
+                    lignes_ignores += 1
                     continue
                 email = str(row[col_map['email']]).lower().strip()
                 firstname = clean_name(row[col_map['prenom']])
@@ -616,8 +632,18 @@ def analyze_email_patterns(filename=None):
             if len(group) > 1:
                 max_pct = group['Pourcentage'].max()
                 if max_pct < 80:
-                    print(f"⚠️ Domaine à ambiguïté : {dom} (pattern majoritaire à {max_pct}%)")
+                    domaines_ambigu += 1
         patterns_df.to_excel(output_file, index=False)
+        # --- Résumé global ---
+        print("\n===== RÉSUMÉ DE L'ANALYSE =====")
+        print(f"Total de lignes analysées : {total_lignes}")
+        print(f"Total de domaines uniques : {len(pattern_counter)}")
+        print(f"Nouveaux domaines ajoutés : {len(new_companies)}")
+        print(f"Patterns non reconnus : {patterns_non_reconnus}")
+        print(f"Lignes ignorées (email invalide ou données manquantes) : {lignes_ignores}")
+        print(f"Domaines à ambiguïté (<80%) : {domaines_ambigu}")
+        print(f"Total de patterns détectés (tous domaines) : {len(rows)}")
+        print("==============================\n")
         if existing_patterns_df is not None:
             existing_companies = set(existing_patterns_df['Domaine'])
         else:

@@ -467,6 +467,9 @@ def analyze_email_patterns(filename=None):
             all_patterns = all_patterns.groupby(['Domaine', 'Pattern'], as_index=False)['Count'].sum()
             # Calculer le total par domaine
             all_patterns['Total'] = all_patterns.groupby('Domaine')['Count'].transform('sum')
+            # Correction : s'assurer que Count et Total sont bien numériques et sans NaN
+            all_patterns['Count'] = pd.to_numeric(all_patterns['Count'], errors='coerce').fillna(1).astype(int)
+            all_patterns['Total'] = pd.to_numeric(all_patterns['Total'], errors='coerce').fillna(1).astype(int)
             # Calculer le pourcentage
             all_patterns['Pourcentage'] = (100 * all_patterns['Count'] / all_patterns['Total']).round(1)
             # Trier et ne garder qu'un pattern par domaine (le plus fréquent)

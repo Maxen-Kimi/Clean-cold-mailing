@@ -439,6 +439,44 @@ def analyze_email_patterns(filename=None):
     try:
         df = pd.read_excel(filename)
         import unidecode
+        # --- NOUVEAU : Si le fichier contient déjà Pattern et Domaine, on importe directement ---
+        if 'Pattern' in df.columns and 'Domaine' in df.columns:
+            print("📥 Import direct de patterns depuis le fichier fourni...")
+            # On normalise les colonnes
+            df['Domaine'] = df['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+            df['Pattern'] = df['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+            # On compte les occurrences de chaque (Domaine, Pattern)
+            imported_counts = df.groupby(['Domaine', 'Pattern']).size().reset_index(name='Count')
+            # On charge l'existant si présent
+            if os.path.exists('detected_patterns.xlsx'):
+                existing = pd.read_excel('detected_patterns.xlsx')
+                # On normalise aussi l'existant
+                if 'Domaine' in existing.columns and 'Pattern' in existing.columns:
+                    existing['Domaine'] = existing['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+                    existing['Pattern'] = existing['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+                else:
+                    existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
+            else:
+                existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
+            # Fusionner les deux (en incrémentant les counts)
+            all_patterns = pd.concat([
+                existing[['Domaine', 'Pattern', 'Count']].fillna(1),
+                imported_counts[['Domaine', 'Pattern', 'Count']]
+            ], ignore_index=True)
+            # Grouper et sommer les counts
+            all_patterns = all_patterns.groupby(['Domaine', 'Pattern'], as_index=False)['Count'].sum()
+            # Calculer le total par domaine
+            all_patterns['Total'] = all_patterns.groupby('Domaine')['Count'].transform('sum')
+            # Calculer le pourcentage
+            all_patterns['Pourcentage'] = (100 * all_patterns['Count'] / all_patterns['Total']).round(1)
+            # Trier et ne garder qu'un pattern par domaine (le plus fréquent)
+            all_patterns = all_patterns.sort_values(['Domaine', 'Count'], ascending=[True, False])
+            all_patterns_unique = all_patterns.drop_duplicates(subset=['Domaine'], keep='first')
+            # Sauvegarder
+            all_patterns_unique[['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total']].to_excel('detected_patterns.xlsx', index=False)
+            print(f"✅ Patterns importés et fusionnés avec la base existante. {len(imported_counts)} patterns ajoutés.")
+            return True
+        # ... suite : logique actuelle ...
         # 1. Normalisation des noms de colonnes
         def normalize_col(col):
             return unidecode.unidecode(str(col)).lower().replace('-', '').replace(' ', '').replace('_', '')

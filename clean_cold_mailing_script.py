@@ -9,6 +9,7 @@ import sys
 from contextlib import redirect_stdout
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+from collections import defaultdict
 
 print(f"Pandas version: {pd.__version__}")
 print(f"Openpyxl version: {openpyxl.__version__}")
@@ -579,24 +580,44 @@ def analyze_email_patterns(filename=None):
         existing_patterns_df = None
         if os.path.exists(output_file):
             existing_patterns_df = pd.read_excel(output_file)
-        patterns_df = pd.DataFrame(patterns)
-        if existing_patterns_df is not None:
-            if 'Domaine' in existing_patterns_df.columns:
-                autres = existing_patterns_df[~existing_patterns_df['Domaine'].isin(entreprises_traitees)]
-                patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
-            else:
-                print("⚠️ Le fichier detected_patterns.xlsx existant ne contient pas la colonne 'Domaine'. Il sera ignoré et remplacé.")
+        # --- Nouvelle logique : historique des patterns par domaine avec pourcentage ---
+        # Charger l'historique si existant
+        pattern_counter = defaultdict(lambda: defaultdict(int))  # {domaine: {pattern: count}}
+        if existing_patterns_df is not None and 'Domaine' in existing_patterns_df.columns and 'Pattern' in existing_patterns_df.columns and 'Count' in existing_patterns_df.columns:
+            for _, row in existing_patterns_df.iterrows():
+                dom = str(row['Domaine']).strip().lower()
+                pat = str(row['Pattern']).strip().lower()
+                count = int(row['Count']) if 'Count' in row and not pd.isna(row['Count']) else 1
+                pattern_counter[dom][pat] += count
+        # Compter les patterns du fichier courant
+        for p in patterns:
+            dom = str(p['Domaine']).strip().lower()
+            pat = str(p['Pattern']).strip().lower()
+            pattern_counter[dom][pat] += 1
+        # Calculer le pourcentage et préparer le DataFrame final
+        rows = []
+        for dom, pat_dict in pattern_counter.items():
+            total = sum(pat_dict.values())
+            for pat, count in pat_dict.items():
+                pourcentage = round(100 * count / total, 1) if total > 0 else 0
+                rows.append({
+                    'Domaine': dom,
+                    'Pattern': pat,
+                    'Pourcentage': pourcentage,
+                    'Count': count,
+                    'Total': total
+                })
+        patterns_df = pd.DataFrame(rows)
+        # Pour la génération : ne garder qu'un seul pattern par domaine (le plus fréquent)
+        patterns_df = patterns_df.sort_values(['Domaine', 'Count'], ascending=[True, False])
+        patterns_df = patterns_df.drop_duplicates(subset=['Domaine'], keep='first')
+        # Avertissement si un domaine a plusieurs patterns proches (<80% pour le majoritaire)
+        for dom, group in pd.DataFrame(rows).groupby('Domaine'):
+            if len(group) > 1:
+                max_pct = group['Pourcentage'].max()
+                if max_pct < 80:
+                    print(f"⚠️ Domaine à ambiguïté : {dom} (pattern majoritaire à {max_pct}%)")
         patterns_df.to_excel(output_file, index=False)
-        # === Post-traitement : compléter Domaine à partir du Pattern si vide ===
-        df_patterns = pd.read_excel(output_file)
-        for idx, row in df_patterns.iterrows():
-            domaine = str(row.get('Domaine', '')).strip()
-            pattern = str(row.get('Pattern', '')).strip()
-            if (not domaine or domaine == 'nan') and '@' in pattern:
-                dom = extract_domain_from_email_or_url(pattern.split('@')[-1])
-                if dom:
-                    df_patterns.at[idx, 'Domaine'] = dom
-        df_patterns.to_excel(output_file, index=False)
         if existing_patterns_df is not None:
             existing_companies = set(existing_patterns_df['Domaine'])
         else:

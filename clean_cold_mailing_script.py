@@ -440,38 +440,38 @@ def analyze_email_patterns(filename=None):
         df = pd.read_excel(filename)
         import unidecode
         # --- NOUVEAU : Si le fichier contient déjà Pattern et Domaine, on importe directement ---
-        if 'Pattern' in df.columns and 'Domaine' in df.columns:
+        if 'pattern' in df.columns and 'domaine' in df.columns:
             print("📥 Import direct de patterns depuis le fichier fourni...")
             # On normalise les colonnes
-            df['Domaine'] = df['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
-            df['Pattern'] = df['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+            df['domaine'] = df['domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+            df['pattern'] = df['pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
             # On compte les occurrences de chaque (Domaine, Pattern) dans le fichier importé
-            imported_counts = df.groupby(['Domaine', 'Pattern']).size().reset_index(name='Count')
+            imported_counts = df.groupby(['domaine', 'pattern']).size().reset_index(name='Count')
             # On charge l'existant si présent
             if os.path.exists('detected_patterns.xlsx'):
                 existing = pd.read_excel('detected_patterns.xlsx')
-                if 'Domaine' in existing.columns and 'Pattern' in existing.columns:
-                    existing['Domaine'] = existing['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
-                    existing['Pattern'] = existing['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+                if 'domaine' in existing.columns and 'pattern' in existing.columns:
+                    existing['domaine'] = existing['domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+                    existing['pattern'] = existing['pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
                     existing['Count'] = pd.to_numeric(existing['Count'], errors='coerce').fillna(1).astype(int)
                 else:
-                    existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
+                    existing = pd.DataFrame(columns=['domaine', 'pattern', 'Pourcentage', 'Count', 'Total'])
             else:
-                existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
+                existing = pd.DataFrame(columns=['domaine', 'pattern', 'Pourcentage', 'Count', 'Total'])
             # Fusionner intelligemment : incrémenter les counts si (Domaine, Pattern) existe déjà
             merged = pd.concat([
-                existing[['Domaine', 'Pattern', 'Count']],
-                imported_counts[['Domaine', 'Pattern', 'Count']]
+                existing[['domaine', 'pattern', 'Count']],
+                imported_counts[['domaine', 'pattern', 'Count']]
             ], ignore_index=True)
-            merged = merged.groupby(['Domaine', 'Pattern'], as_index=False)['Count'].sum()
+            merged = merged.groupby(['domaine', 'pattern'], as_index=False)['Count'].sum()
             # Recalculer le total par domaine
-            merged['Total'] = merged.groupby('Domaine')['Count'].transform('sum')
+            merged['Total'] = merged.groupby('domaine')['Count'].transform('sum')
             merged['Count'] = pd.to_numeric(merged['Count'], errors='coerce').fillna(1).astype(int)
             merged['Total'] = pd.to_numeric(merged['Total'], errors='coerce').fillna(1).astype(int)
             merged['Pourcentage'] = (100 * merged['Count'] / merged['Total']).round(1)
-            merged = merged.sort_values(['Domaine', 'Count'], ascending=[True, False])
+            merged = merged.sort_values(['domaine', 'Count'], ascending=[True, False])
             # Sauvegarder TOUS les patterns pour chaque domaine
-            merged[['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total']].to_excel('detected_patterns.xlsx', index=False)
+            merged[['domaine', 'pattern', 'Pourcentage', 'Count', 'Total']].to_excel('detected_patterns.xlsx', index=False)
             print(f"✅ Patterns importés et fusionnés avec la base existante. {len(imported_counts)} patterns ajoutés.")
             return True
         # ... suite : logique actuelle ...

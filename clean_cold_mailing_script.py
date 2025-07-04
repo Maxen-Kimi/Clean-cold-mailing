@@ -447,7 +447,11 @@ def analyze_email_patterns(filename=None):
             'email': ['email', 'e-mail', 'e_mail', 'courriel', 'mail', 'adresseemail', 'adressemail'],
             'prenom': ['prenom', 'prénom', 'first_name', 'firstname'],
             'nom': ['nom', 'last_name', 'lastname', 'surname'],
-            'domaine': ['domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb'],
+            'domaine': [
+                'domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb', 'url', 'urlentreprise', 'urlsociete', 'urlorganisation',
+                'site', 'siteentreprise', 'sitesociete', 'siteorganisation', 'web', 'webentreprise', 'websociete', 'weborganisation',
+                'companydomain', 'company_domain', 'organisationdomain', 'societedomaine', 'entreprisedomaine', 'companyurl', 'organisationurl', 'societeurl', 'entrepriseurl'
+            ],
             'societe': ['societe', 'société', 'company', 'entreprise', 'organisation']
         }
         # 3. Mapping automatique
@@ -577,8 +581,11 @@ def analyze_email_patterns(filename=None):
             existing_patterns_df = pd.read_excel(output_file)
         patterns_df = pd.DataFrame(patterns)
         if existing_patterns_df is not None:
-            autres = existing_patterns_df[~existing_patterns_df['Domaine'].isin(entreprises_traitees)]
-            patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
+            if 'Domaine' in existing_patterns_df.columns:
+                autres = existing_patterns_df[~existing_patterns_df['Domaine'].isin(entreprises_traitees)]
+                patterns_df = pd.concat([patterns_df, autres], ignore_index=True)
+            else:
+                print("⚠️ Le fichier detected_patterns.xlsx existant ne contient pas la colonne 'Domaine'. Il sera ignoré et remplacé.")
         patterns_df.to_excel(output_file, index=False)
         # === Post-traitement : compléter Domaine à partir du Pattern si vide ===
         df_patterns = pd.read_excel(output_file)

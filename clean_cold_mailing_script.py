@@ -445,38 +445,33 @@ def analyze_email_patterns(filename=None):
             # On normalise les colonnes
             df['Domaine'] = df['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
             df['Pattern'] = df['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
-            # On compte les occurrences de chaque (Domaine, Pattern)
+            # On compte les occurrences de chaque (Domaine, Pattern) dans le fichier importé
             imported_counts = df.groupby(['Domaine', 'Pattern']).size().reset_index(name='Count')
             # On charge l'existant si présent
             if os.path.exists('detected_patterns.xlsx'):
                 existing = pd.read_excel('detected_patterns.xlsx')
-                # On normalise aussi l'existant
                 if 'Domaine' in existing.columns and 'Pattern' in existing.columns:
                     existing['Domaine'] = existing['Domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
                     existing['Pattern'] = existing['Pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
+                    existing['Count'] = pd.to_numeric(existing['Count'], errors='coerce').fillna(1).astype(int)
                 else:
                     existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
             else:
                 existing = pd.DataFrame(columns=['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total'])
-            # Fusionner les deux (en incrémentant les counts)
-            all_patterns = pd.concat([
-                existing[['Domaine', 'Pattern', 'Count']].fillna(1),
+            # Fusionner intelligemment : incrémenter les counts si (Domaine, Pattern) existe déjà
+            merged = pd.concat([
+                existing[['Domaine', 'Pattern', 'Count']],
                 imported_counts[['Domaine', 'Pattern', 'Count']]
             ], ignore_index=True)
-            # Grouper et sommer les counts
-            all_patterns = all_patterns.groupby(['Domaine', 'Pattern'], as_index=False)['Count'].sum()
-            # Calculer le total par domaine
-            all_patterns['Total'] = all_patterns.groupby('Domaine')['Count'].transform('sum')
-            # Correction : s'assurer que Count et Total sont bien numériques et sans NaN
-            all_patterns['Count'] = pd.to_numeric(all_patterns['Count'], errors='coerce').fillna(1).astype(int)
-            all_patterns['Total'] = pd.to_numeric(all_patterns['Total'], errors='coerce').fillna(1).astype(int)
-            # Calculer le pourcentage
-            all_patterns['Pourcentage'] = (100 * all_patterns['Count'] / all_patterns['Total']).round(1)
-            # Trier et ne garder qu'un pattern par domaine (le plus fréquent)
-            all_patterns = all_patterns.sort_values(['Domaine', 'Count'], ascending=[True, False])
-            all_patterns_unique = all_patterns.drop_duplicates(subset=['Domaine'], keep='first')
-            # Sauvegarder
-            all_patterns_unique[['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total']].to_excel('detected_patterns.xlsx', index=False)
+            merged = merged.groupby(['Domaine', 'Pattern'], as_index=False)['Count'].sum()
+            # Recalculer le total par domaine
+            merged['Total'] = merged.groupby('Domaine')['Count'].transform('sum')
+            merged['Count'] = pd.to_numeric(merged['Count'], errors='coerce').fillna(1).astype(int)
+            merged['Total'] = pd.to_numeric(merged['Total'], errors='coerce').fillna(1).astype(int)
+            merged['Pourcentage'] = (100 * merged['Count'] / merged['Total']).round(1)
+            merged = merged.sort_values(['Domaine', 'Count'], ascending=[True, False])
+            # Sauvegarder TOUS les patterns pour chaque domaine
+            merged[['Domaine', 'Pattern', 'Pourcentage', 'Count', 'Total']].to_excel('detected_patterns.xlsx', index=False)
             print(f"✅ Patterns importés et fusionnés avec la base existante. {len(imported_counts)} patterns ajoutés.")
             return True
         # ... suite : logique actuelle ...

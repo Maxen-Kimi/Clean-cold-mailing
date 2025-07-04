@@ -510,12 +510,9 @@ def analyze_email_patterns(filename=None):
         # --- Nouvelle logique : historique des patterns par domaine avec pourcentage ---
         # Charger l'historique si existant
         pattern_counter = defaultdict(lambda: defaultdict(int))  # {domaine: {pattern: count}}
-        if existing_patterns_df is not None and 'Domaine' in existing_patterns_df.columns and 'Pattern' in existing_patterns_df.columns and 'Count' in existing_patterns_df.columns:
-            for _, row in existing_patterns_df.iterrows():
-                dom = str(row['Domaine']).strip().lower()
-                pat = str(row['Pattern']).strip().lower()
-                count = int(row['Count']) if 'Count' in row and not pd.isna(row['Count']) else 1
-                pattern_counter[dom][pat] += count
+        existing_patterns_df = None
+        if os.path.exists('detected_patterns.xlsx'):
+            existing_patterns_df = pd.read_excel('detected_patterns.xlsx')
         # Compter les patterns du fichier courant
         for index, row in df.iterrows():
             try:
@@ -593,9 +590,6 @@ def analyze_email_patterns(filename=None):
             print("❌ Aucun pattern valide n'a été trouvé")
             return False
         output_file = 'detected_patterns.xlsx'
-        existing_patterns_df = None
-        if os.path.exists(output_file):
-            existing_patterns_df = pd.read_excel(output_file)
         # --- Nouvelle logique : historique des patterns par domaine avec pourcentage ---
         # Charger l'historique si existant
         pattern_counter = defaultdict(lambda: defaultdict(int))  # {domaine: {pattern: count}}

@@ -445,11 +445,16 @@ def analyze_email_patterns(filename=None):
             # On normalise les colonnes
             df['domaine'] = df['domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
             df['pattern'] = df['pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
-            # On compte les occurrences de chaque (Domaine, Pattern) dans le fichier importé
+            # On compte les occurrences de chaque (domaine, pattern) dans le fichier importé
             imported_counts = df.groupby(['domaine', 'pattern']).size().reset_index(name='Count')
             # On charge l'existant si présent
             if os.path.exists('detected_patterns.xlsx'):
                 existing = pd.read_excel('detected_patterns.xlsx')
+                # Harmonisation des colonnes existantes (si majuscules)
+                if 'Domaine' in existing.columns:
+                    existing = existing.rename(columns={'Domaine': 'domaine'})
+                if 'Pattern' in existing.columns:
+                    existing = existing.rename(columns={'Pattern': 'pattern'})
                 if 'domaine' in existing.columns and 'pattern' in existing.columns:
                     existing['domaine'] = existing['domaine'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
                     existing['pattern'] = existing['pattern'].apply(lambda x: str(x).strip().lower() if pd.notna(x) else x)
@@ -458,7 +463,7 @@ def analyze_email_patterns(filename=None):
                     existing = pd.DataFrame(columns=['domaine', 'pattern', 'Pourcentage', 'Count', 'Total'])
             else:
                 existing = pd.DataFrame(columns=['domaine', 'pattern', 'Pourcentage', 'Count', 'Total'])
-            # Fusionner intelligemment : incrémenter les counts si (Domaine, Pattern) existe déjà
+            # Fusionner intelligemment : incrémenter les counts si (domaine, pattern) existe déjà
             merged = pd.concat([
                 existing[['domaine', 'pattern', 'Count']],
                 imported_counts[['domaine', 'pattern', 'Count']]
@@ -610,8 +615,8 @@ def analyze_email_patterns(filename=None):
                     continue
                 full_pattern = f"{pattern}@{vrai_domaine}"
                 patterns.append({
-                    'Domaine': vrai_domaine,
-                    'Pattern': full_pattern
+                    'domaine': vrai_domaine,
+                    'pattern': full_pattern
                 })
                 entreprises_traitees.add(vrai_domaine)
                 new_companies.add(vrai_domaine)
@@ -624,16 +629,16 @@ def analyze_email_patterns(filename=None):
         # --- Nouvelle logique : historique des patterns par domaine avec pourcentage ---
         # Charger l'historique si existant
         pattern_counter = defaultdict(lambda: defaultdict(int))  # {domaine: {pattern: count}}
-        if existing_patterns_df is not None and 'Domaine' in existing_patterns_df.columns and 'Pattern' in existing_patterns_df.columns and 'Count' in existing_patterns_df.columns:
+        if existing_patterns_df is not None and 'domaine' in existing_patterns_df.columns and 'pattern' in existing_patterns_df.columns and 'Count' in existing_patterns_df.columns:
             for _, row in existing_patterns_df.iterrows():
-                dom = str(row['Domaine']).strip().lower()
-                pat = str(row['Pattern']).strip().lower()
+                dom = str(row['domaine']).strip().lower()
+                pat = str(row['pattern']).strip().lower()
                 count = int(row['Count']) if 'Count' in row and not pd.isna(row['Count']) else 1
                 pattern_counter[dom][pat] += count
         # Compter les patterns du fichier courant
         for p in patterns:
-            dom = str(p['Domaine']).strip().lower()
-            pat = str(p['Pattern']).strip().lower()
+            dom = str(p['domaine']).strip().lower()
+            pat = str(p['pattern']).strip().lower()
             pattern_counter[dom][pat] += 1
         # Calculer le pourcentage et préparer le DataFrame final
         rows = []
@@ -642,18 +647,18 @@ def analyze_email_patterns(filename=None):
             for pat, count in pat_dict.items():
                 pourcentage = round(100 * count / total, 1) if total > 0 else 0
                 rows.append({
-                    'Domaine': dom,
-                    'Pattern': pat,
+                    'domaine': dom,
+                    'pattern': pat,
                     'Pourcentage': pourcentage,
                     'Count': count,
                     'Total': total
                 })
         patterns_df = pd.DataFrame(rows)
         # Pour la génération : ne garder qu'un seul pattern par domaine (le plus fréquent)
-        patterns_df = patterns_df.sort_values(['Domaine', 'Count'], ascending=[True, False])
-        patterns_df = patterns_df.drop_duplicates(subset=['Domaine'], keep='first')
+        patterns_df = patterns_df.sort_values(['domaine', 'Count'], ascending=[True, False])
+        patterns_df = patterns_df.drop_duplicates(subset=['domaine'], keep='first')
         # Avertissement si un domaine a plusieurs patterns proches (<80% pour le majoritaire)
-        for dom, group in pd.DataFrame(rows).groupby('Domaine'):
+        for dom, group in pd.DataFrame(rows).groupby('domaine'):
             if len(group) > 1:
                 max_pct = group['Pourcentage'].max()
                 if max_pct < 80:
@@ -670,7 +675,7 @@ def analyze_email_patterns(filename=None):
         print(f"Total de patterns détectés (tous domaines) : {len(rows)}")
         print("==============================\n")
         if existing_patterns_df is not None:
-            existing_companies = set(existing_patterns_df['Domaine'])
+            existing_companies = set(existing_patterns_df['domaine'])
         else:
             existing_companies = set()
         newly_added_companies = new_companies - existing_companies

@@ -528,13 +528,10 @@ def analyze_email_patterns(filename=None):
                 elif 'companywebsiteurl' in df.columns and pd.notna(row.get('companywebsiteurl', '')) and str(row.get('companywebsiteurl', '')).strip():
                     vrai_domaine = extract_domain_from_email_or_url(row['companywebsiteurl'])
                 else:
-                    print(f"⚠️ Ligne {index}: Pas de domaine trouvé")
                     continue
                 if not email or not firstname or not lastname or not vrai_domaine:
-                    print(f"⚠️ Ligne {index}: Données manquantes")
                     continue
                 if '@' not in email:
-                    print(f"⚠️ Ligne {index}: Format d'email invalide")
                     continue
                 if filter_on_qualification:
                     if not (("nominative@pro" in str(row.get('emailqualification', ''))) or ("generated" in str(row.get('emailqualification', '')))):
@@ -574,7 +571,6 @@ def analyze_email_patterns(filename=None):
                         pattern_found = True
                         break
                 if not pattern_found:
-                    print(f"⚠️ Ligne {index}: Pattern non reconnu pour {email}")
                     continue
                 full_pattern = f"{pattern}@{vrai_domaine}"
                 patterns.append({
@@ -584,7 +580,6 @@ def analyze_email_patterns(filename=None):
                 entreprises_traitees.add(vrai_domaine)
                 new_companies.add(vrai_domaine)
             except Exception as e:
-                print(f"⚠️ Erreur ligne {index}: {str(e)}")
                 continue
         if not patterns:
             print("❌ Aucun pattern valide n'a été trouvé")

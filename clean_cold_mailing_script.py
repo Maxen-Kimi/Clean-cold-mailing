@@ -228,9 +228,13 @@ def step3_clean_and_complete(filename='input.xlsx'):
         domain_col = find_column(input_df, DOMAIN_VARIANTS)
         societe_col = find_column(input_df, SOCIETE_VARIANTS)
 
-        if not prenom_col or not nom_col or not email_col:
-            print("❌ Erreur: Le fichier doit contenir les colonnes Prénom, Nom et Email (ou équivalents, voir documentation).")
+        if not prenom_col or not nom_col:
+            print("❌ Erreur: Le fichier doit contenir les colonnes Prénom et Nom (ou équivalents, voir documentation).")
             return False
+        if not email_col:
+            # Si la colonne email n'existe pas, on la crée vide
+            email_col = 'Email'
+            input_df[email_col] = ''
         if not domain_col and not societe_col:
             print("❌ Erreur: Le fichier doit contenir une colonne Domaine (ou équivalent) ou Société (ou équivalent).")
             return False

@@ -20,6 +20,40 @@ EXCEPTIONS_COMPOSES_RAW = [
 ]
 EXCEPTIONS_COMPOSES = set([unidecode.unidecode(x).lower() for x in EXCEPTIONS_COMPOSES_RAW])
 
+def find_column(df, variants):
+    """
+    Trouve la colonne du DataFrame correspondant à une des variantes fournies.
+    Ignore la casse, les accents, les espaces, les underscores, les tirets.
+    """
+    import unidecode
+    normalized = lambda s: unidecode.unidecode(str(s)).lower().replace(' ', '').replace('_', '').replace('-', '')
+    norm_cols = {normalized(col): col for col in df.columns}
+    for v in variants:
+        v_norm = normalized(v)
+        if v_norm in norm_cols:
+            return norm_cols[v_norm]
+    return None
+
+PRENOM_VARIANTS = [
+    'prénom', 'prenom', 'first name', 'firstname', 'first_name', 'givenname', 'given_name', 'forename', 'prénom(s)', 'prénoms', 'prename', 'prénom1', 'prenom1', 'prénom principal', 'prenom principal', 'prénomcontact', 'prenomcontact', 'contactprénom', 'contactprenom', 'prénom employé', 'prenom employe', 'prénom du contact', 'prenom du contact', 'prénom principal', 'prenom principal', 'prénom complet', 'prenom complet', 'prénom complet du contact', 'prenom complet du contact', 'first', 'f_name', 'fistname', 'fist name', 'prénom2', 'prenom2', 'prénom3', 'prenom3', 'prénom4', 'prenom4', 'prénom5', 'prenom5', 'prénom6', 'prenom6', 'prénom7', 'prenom7', 'prénom8', 'prenom8', 'prénom9', 'prenom9', 'prénom10', 'prenom10', 'prénom11', 'prenom11', 'prénom12', 'prenom12', 'prénom13', 'prenom13', 'prénom14', 'prenom14', 'prénom15', 'prenom15', 'prénom16', 'prenom16', 'prénom17', 'prenom17', 'prénom18', 'prenom18', 'prénom19', 'prenom19', 'prénom20', 'prenom20'
+]
+NOM_VARIANTS = [
+    'nom', 'last name', 'lastname', 'last_name', 'surname', 'familyname', 'family_name', 'nom de famille', 'nomdefamille', 'nomcontact', 'contactnom', 'nom employé', 'nom employe', 'nom du contact', 'nom principal', 'nom complet', 'nom complet du contact', 'last', 'l_name', 'lastname1', 'nom1', 'nom2', 'nom3', 'nom4', 'nom5', 'nom6', 'nom7', 'nom8', 'nom9', 'nom10', 'nom11', 'nom12', 'nom13', 'nom14', 'nom15', 'nom16', 'nom17', 'nom18', 'nom19', 'nom20'
+]
+EMAIL_VARIANTS = [
+    'email', 'e-mail', 'e_mail', 'courriel', 'mail', 'adresse email', 'adresse e-mail', 'adresseemail', 'adressemail', 'emailaddress', 'email address', 'email_adresse', 'emailadresse', 'mailadresse', 'mail address', 'adresse', 'adresse mail', 'adresse courriel', 'courrieladresse', 'courriel address', 'courriel_adresse', 'courrieladdress', 'courriel1', 'email1', 'mail1', 'email2', 'mail2', 'email3', 'mail3', 'email4', 'mail4', 'email5', 'mail5', 'email6', 'mail6', 'email7', 'mail7', 'email8', 'mail8', 'email9', 'mail9', 'email10', 'mail10'
+]
+DOMAIN_VARIANTS = [
+    'domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb', 'url', 'urlentreprise', 'urlsociete', 'urlorganisation',
+    'site', 'siteentreprise', 'sitesociete', 'siteorganisation', 'web', 'webentreprise', 'websociete', 'weborganisation',
+    'companydomain', 'company_domain', 'organisationdomain', 'societedomaine', 'entreprisedomaine', 'companyurl', 'organisationurl', 'societeurl', 'entrepriseurl',
+    'domain1', 'domain2', 'domain3', 'domain4', 'domain5', 'domain6', 'domain7', 'domain8', 'domain9', 'domain10'
+]
+SOCIETE_VARIANTS = [
+    'société', 'societe', 'company', 'entreprise', 'organisation', 'nomentreprise', 'nomsociete', 'nomorganisation',
+    'raison sociale', 'companyname', 'organisationname', 'societename', 'entreprisename', 'company1', 'company2', 'company3', 'company4', 'company5', 'company6', 'company7', 'company8', 'company9', 'company10'
+]
+
 def extract_domain_from_email_or_url(value):
     """
     Extrait le domaine d'un email (après le @) ou d'une URL (ex: https://www.company.com -> company.com).
@@ -187,29 +221,21 @@ def step3_clean_and_complete(filename='input.xlsx'):
         input_df = pd.read_excel(filename)
         input_df = input_df.reset_index(drop=True)
 
-        # === Vérification de la présence d'une colonne Domaine ou Société (liste étendue) ===
-        domain_variants = [
-            'domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb', 'url', 'urlentreprise', 'urlsociete', 'urlorganisation',
-            'site', 'siteentreprise', 'sitesociete', 'siteorganisation', 'web', 'webentreprise', 'websociete', 'weborganisation',
-            'companydomain', 'Company Domain' 'company_domain', 'organisationdomain', 'societedomaine', 'entreprisedomaine', 'companyurl', 'organisationurl', 'societeurl', 'entrepriseurl'
-        ]
-        societe_variants = [
-            'société', 'societe', 'company', 'entreprise', 'organisation', 'nomentreprise', 'nomsociete', 'nomorganisation',
-            'raison sociale', 'companyname', 'organisationname', 'societename', 'entreprisename'
-        ]
-        domain_col = None
-        societe_col = None
-        for col in input_df.columns:
-            if col.lower().replace(' ', '').replace('_', '') in [v.replace(' ', '').replace('_', '') for v in domain_variants]:
-                domain_col = col
-            if col.lower().replace(' ', '').replace('_', '') in [v.replace(' ', '').replace('_', '') for v in societe_variants]:
-                societe_col = col
+        # Détection ultra-robuste des colonnes critiques
+        prenom_col = find_column(input_df, PRENOM_VARIANTS)
+        nom_col = find_column(input_df, NOM_VARIANTS)
+        email_col = find_column(input_df, EMAIL_VARIANTS)
+        domain_col = find_column(input_df, DOMAIN_VARIANTS)
+        societe_col = find_column(input_df, SOCIETE_VARIANTS)
+
+        if not prenom_col or not nom_col or not email_col:
+            print("❌ Erreur: Le fichier doit contenir les colonnes Prénom, Nom et Email (ou équivalents, voir documentation).")
+            return False
         if not domain_col and not societe_col:
             print("❌ Erreur: Le fichier doit contenir une colonne Domaine (ou équivalent) ou Société (ou équivalent).")
             return False
-        # === FIN AJOUT ===
-        
-        # S'assurer que les colonnes 'Email' et 'Email Qualification' existent
+
+        # S'assurer que les colonnes 'Email' et 'Email Qualification' existent (pour la suite du script)
         if 'Email' not in input_df.columns:
             input_df['Email'] = ''
         if 'Email Qualification' not in input_df.columns:
@@ -223,10 +249,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
             input_df['Email Pattern'] = None
         
         # Normaliser les colonnes Prénom et Nom (caractères spéciaux)
-        if 'Prénom' in input_df.columns:
-            input_df['Prénom'] = input_df['Prénom'].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
-        if 'Nom' in input_df.columns:
-            input_df['Nom'] = input_df['Nom'].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
+        input_df[prenom_col] = input_df[prenom_col].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
+        input_df[nom_col] = input_df[nom_col].apply(lambda x: unidecode.unidecode(str(x)) if pd.notna(x) else x)
 
         # Supprimer les titres, diplômes et suffixes académiques/honorifiques dans Prénom et Nom
         TITRES_A_SUPPRIMER = [
@@ -249,10 +273,8 @@ def step3_clean_and_complete(filename='input.xlsx'):
             # Nettoyer les espaces multiples
             text = re.sub(r'\s+', ' ', text).strip()
             return text
-        if 'Prénom' in input_df.columns:
-            input_df['Prénom'] = input_df['Prénom'].apply(remove_titles)
-        if 'Nom' in input_df.columns:
-            input_df['Nom'] = input_df['Nom'].apply(remove_titles)
+        input_df[prenom_col] = input_df[prenom_col].apply(remove_titles)
+        input_df[nom_col] = input_df[nom_col].apply(remove_titles)
 
         # === Complétion prénom/nom via LinkedIn (AVANT nettoyage) ===
         if 'URL Linkedin' in input_df.columns:

@@ -56,7 +56,7 @@ def clean_name(name):
         return ""
     return name.lower()
 
-def generate_email(row, pattern):
+def generate_email(row, pattern, societe_col=None):
     if pd.isna(pattern):
         return ""
     
@@ -70,7 +70,8 @@ def generate_email(row, pattern):
 
     firstname = join_if_exception(row['Prénom'])
     lastname = join_if_exception(row['Nom'])
-    company = row['Société'].lower()
+    # Utiliser la société uniquement si la colonne existe
+    company = row[societe_col].lower() if societe_col and societe_col in row and pd.notna(row[societe_col]) else ''
     
     if not firstname or not lastname:
         return ""
@@ -214,11 +215,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
         if 'Email Qualification' not in input_df.columns:
             input_df['Email Qualification'] = ''
         
-        # Créer un dictionnaire des patterns
-        patterns_dict = dict(zip(patterns_df['Société'], patterns_df['Pattern']))
-        
-        # Ajouter une colonne pour les patterns
-        input_df['Email Pattern'] = input_df['Société'].map(patterns_dict)
+        # Créer un dictionnaire des patterns (par société si dispo, sinon None)
+        if societe_col and societe_col in patterns_df.columns and societe_col in input_df.columns:
+            patterns_dict = dict(zip(patterns_df[societe_col], patterns_df['Pattern']))
+            input_df['Email Pattern'] = input_df[societe_col].map(patterns_dict)
+        else:
+            input_df['Email Pattern'] = None
         
         # Normaliser les colonnes Prénom et Nom (caractères spéciaux)
         if 'Prénom' in input_df.columns:
@@ -290,10 +292,10 @@ def step3_clean_and_complete(filename='input.xlsx'):
                     if domain_from_url.lower() in domaines:
                         pattern = pat_row['Pattern']
                         break
-            # 2. Sinon, par société
-            if pattern is None and 'Société' in row and pd.notna(row['Société']):
+            # 2. Sinon, par société (seulement si la colonne existe)
+            if pattern is None and societe_col and societe_col in row and pd.notna(row[societe_col]):
                 for idx, pat_row in patterns_df.iterrows():
-                    if str(row['Société']).strip().lower() == str(pat_row['Société']).strip().lower():
+                    if societe_col in pat_row and str(row[societe_col]).strip().lower() == str(pat_row[societe_col]).strip().lower():
                         pattern = pat_row['Pattern']
                         break
             if pattern:
@@ -301,7 +303,12 @@ def step3_clean_and_complete(filename='input.xlsx'):
                 row_for_email = row.copy()
                 row_for_email['Prénom'] = row['Prénom Complet']
                 row_for_email['Nom'] = row['Nom Complet']
-                return generate_email(row_for_email, pattern)
+                # Utiliser la société uniquement si la colonne existe
+                if societe_col and societe_col in row:
+                    row_for_email['Société'] = row[societe_col]
+                else:
+                    row_for_email['Société'] = ''
+                return generate_email(row_for_email, pattern, societe_col)
             return ''
         input_df['New Email'] = input_df.apply(get_generated_email, axis=1)
 

@@ -185,6 +185,28 @@ def step3_clean_and_complete(filename='input.xlsx'):
         patterns_df = pd.read_excel('detected_patterns.xlsx')
         input_df = pd.read_excel(filename)
         input_df = input_df.reset_index(drop=True)
+
+        # === Vérification de la présence d'une colonne Domaine ou Société (liste étendue) ===
+        domain_variants = [
+            'domaine', 'domain', 'companywebsiteurl', 'website', 'siteweb', 'url', 'urlentreprise', 'urlsociete', 'urlorganisation',
+            'site', 'siteentreprise', 'sitesociete', 'siteorganisation', 'web', 'webentreprise', 'websociete', 'weborganisation',
+            'companydomain', 'Company Domain' 'company_domain', 'organisationdomain', 'societedomaine', 'entreprisedomaine', 'companyurl', 'organisationurl', 'societeurl', 'entrepriseurl'
+        ]
+        societe_variants = [
+            'société', 'societe', 'company', 'entreprise', 'organisation', 'nomentreprise', 'nomsociete', 'nomorganisation',
+            'raison sociale', 'companyname', 'organisationname', 'societename', 'entreprisename'
+        ]
+        domain_col = None
+        societe_col = None
+        for col in input_df.columns:
+            if col.lower().replace(' ', '').replace('_', '') in [v.replace(' ', '').replace('_', '') for v in domain_variants]:
+                domain_col = col
+            if col.lower().replace(' ', '').replace('_', '') in [v.replace(' ', '').replace('_', '') for v in societe_variants]:
+                societe_col = col
+        if not domain_col and not societe_col:
+            print("❌ Erreur: Le fichier doit contenir une colonne Domaine (ou équivalent) ou Société (ou équivalent).")
+            return False
+        # === FIN AJOUT ===
         
         # S'assurer que les colonnes 'Email' et 'Email Qualification' existent
         if 'Email' not in input_df.columns:
